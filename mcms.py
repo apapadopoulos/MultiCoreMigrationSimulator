@@ -9,6 +9,7 @@ import sys
 import libs.Process as proc
 import libs.Controller as ctrl
 import libs.Scheduler as sched
+import libs.Migration as mig
 import libs.Utils as ut
 import libs.Tests as tst
 
@@ -22,7 +23,7 @@ def main():
 	Threads = []
 	alphas  = []
 	for i in xrange(0,numThreads):
-		alpha = 0.5
+		alpha = 0.25
 		alphas.append(alpha)
 		ut.addProcess(Threads,ident=i, alpha=alpha,stdDev=0.0)
 		Threads[i].viewProcess()
@@ -35,42 +36,39 @@ def main():
 		Schedulers.append(sched.IplusPI(ident=i, Kiin=0.25, Kpout=2.0, Kiout=0.25))
 		tauro[i] = 1
 
-
-	## Migration data
-
-	total_migrations = 0;  # counter for the number of migrations
-
+	## Creating a migration manager
+	# Migration data
 	utilizationSetPoint  = 0.60 * np.ones((numCores))  # utilization set point for each core
 	relocationThresholds = 1.10 * utilizationSetPoint  # 
+	mm = mig.MigrationManager(numCores,relocationThresholds)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
 	placement_matrix[:, 0] = 1; # in the beginning all threads are on the first core
-	integrated_overload_index = np.zeros((1, numCores)); # init overload index
 
-	AA = np.tile(alphas,[numCores,1]).T # The equivalent of repmat in Matlab
-	Alphas = AA*placement_matrix
+	vU  = np.zeros((tFin,numCores))
+	vUn = np.zeros((tFin,numCores))
 
 	## Starting the simulation
-	for kk in xrange(1,tFin+1):
-		# Scheduling all the cores
-		if kk == 450:
-			# simulating a migration
-			placement_matrix[0,0] = 0
-			placement_matrix[0,1] = 1
+	for kk in xrange(0,tFin+1):
+		# # Scheduling all the cores
+		# if kk == 450:
+		# 	# simulating a migration
+		# 	placement_matrix[0,0] = 0
+		# 	placement_matrix[0,1] = 1
 		for cc in xrange(0,numCores):
 			# Extracting the subset of tasks to be scheduled
 			subset_idx = np.nonzero(placement_matrix[:,cc])[0]
 			subset_Threads = [Threads[i] for i in subset_idx]
 			# Schedule the subset of tasks
 			taur, taut, tauto = Schedulers[cc].schedule(subset_Threads,tauro[cc])
-			Schedulers[cc].viewUtilization()
+			#Schedulers[cc].viewUtilization()
+			vU[kk-1,cc]  = Schedulers[cc].getUtilization()
+			vUn[kk-1,cc] = Schedulers[cc].getNominalUtilization()
+		placement_matrix = mm.migration_simple(Schedulers, placement_matrix)
 
-
-	vtauro = np.zeros((tFin,1))
-	vtaur  = np.zeros((tFin,1))
-	vtauto = np.zeros((tFin,numThreads))
-	vtaut  = np.zeros((tFin,numThreads))
-
+	plt.plot(xrange(0,tFin),vU)
+	plt.plot(xrange(0,tFin),np.ones(tFin)*1.1*0.6,'--')
+	plt.show()
 
 
 
