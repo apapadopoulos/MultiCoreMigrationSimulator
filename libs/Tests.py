@@ -33,7 +33,7 @@ def testInnerLoop(tFin):
 	plt.plot(xrange(0,tFin),vtauto,'k--')
 	plt.show()
 
-def testScheduler(tFin,numThreads):
+def testSchedulerAddRemoveThreads(tFin,numThreads):
 	# Creating numThreads threads
 	Threads = []
 	alphas  = []
@@ -88,7 +88,7 @@ def testScheduler(tFin,numThreads):
 	plt.plot(xrange(0,tFin),vtauro,'k--')
 	plt.show()
 
-def testScheduler2(tFin,numThreads):
+def testSchedulerWithInternalDataPlot(tFin,numThreads):
 	# Creating numThreads threads
 	Threads = []
 	alphas  = []
@@ -123,4 +123,44 @@ def testScheduler2(tFin,numThreads):
 	plt.figure(2)
 	plt.plot(xrange(0,tFin),vtaut)
 	plt.plot(xrange(0,tFin),vtauto,'--')
+	plt.show()
+
+
+def testSchedulerNoThreads(tFin):
+	# Creating numThreads threads
+	Threads = []
+	alphas  = []
+
+	scheduler = sched.IplusPI(ident=0, Kiin=0.25, Kpout=2.0, Kiout=0.25)
+
+	tauro = 1
+
+	vtauro = np.zeros((tFin,1))
+	vtaur  = np.zeros((tFin,1))
+	vtauto = []
+	vtaut  = []
+
+	for kk in xrange(1,tFin+1):
+
+		if kk == 100:
+			print 'Adding a process...'
+			numThreads = ut.addProcess(Threads,alpha=0.5,ident=100)
+
+		if kk == 200:
+			print 'Removing a process...'
+			numThreads = ut.removeProcess(Threads,100)
+
+
+		taur, taut, tauto = scheduler.schedule(Threads,tauro)
+		scheduler.viewUtilization()
+
+		# Store variables
+		vtauro[kk-1,0] = tauro
+		vtaur[kk-1,0]  = taur
+		vtauto.append(tauto)
+		vtaut.append(taut)
+		
+
+	plt.plot(xrange(0,tFin),vtaur,'b')
+	plt.plot(xrange(0,tFin),vtauro,'k--')
 	plt.show()
