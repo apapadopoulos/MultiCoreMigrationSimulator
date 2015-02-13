@@ -17,7 +17,7 @@ class Scheduler(object):
 class IplusPI(Scheduler):
 	"""docstring for IplusPI"""
 
-	def __init__(self, ident, Kiin=0.25, Kpout=2.5, Kiout=0.5):
+	def __init__(self, ident, Kiin=0.25, Kpout=1.4, Kiout=0.168):
 		self.id = ident
 		self.InnerControllers = []
 		self.numReg = 0
