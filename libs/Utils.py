@@ -9,15 +9,21 @@ import sys
 
 
 def addProcess(procList,ident=None, alpha=1,stdDev=0.01):
-	# TODO check on existing ids
-	numThreads = len(procList) + 1
+	numThreads = len(procList)
 	if ident == None:
-		idproc = numThreads - 1
+		idproc = numThreads
 	else:
 		idproc = ident
-	procList.append(proc.Process(ident=idproc,\
-		                         alpha=alpha,\
-		                         stdDev=stdDev))
+
+	# Checking for replicated ids
+	pIDs = [procList[i].getID() for i in range(0,numThreads)]
+	if idproc not in pIDs:
+		procList.append(proc.Process(ident=idproc,\
+			                         alpha=alpha,\
+		    	                     stdDev=stdDev))
+		numThreads = len(procList) + 1
+	else:
+		print 'Cannot add a process with ID %d'%idproc
 	return numThreads
 
 

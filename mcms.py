@@ -20,7 +20,6 @@ def main():
 
 	tst.testScheduler(tFin,numThreads)
 
-
 	# # Creating numThreads threads
 	# Threads = []
 	# alphas  = []
