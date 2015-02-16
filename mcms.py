@@ -15,15 +15,15 @@ import libs.Tests as tst
 
 
 def main():
-	numCores = 2
-	numThreads = 5
-	tFin = 500
+	numCores = 8
+	numThreads = 1000
+	tFin = 1000
 
 	## Creating numThreads threads
 	Threads = []
 	alphas  = []
 	for i in xrange(0,numThreads):
-		alpha = 0.25
+		alpha = 0.5*numCores/numThreads
 		alphas.append(alpha)
 		ut.addProcess(Threads,ident=i, alpha=alpha,stdDev=0.0)
 		Threads[i].viewProcess()
@@ -38,23 +38,26 @@ def main():
 
 	## Creating a migration manager
 	# Migration data
-	utilizationSetPoint  = 0.60 * np.ones((numCores))  # utilization set point for each core
-	relocationThresholds = 1.10 * utilizationSetPoint  # 
+	utilizationSetPoint  = 1.0 * np.ones(numCores)  # utilization set point for each core
+	relocationThresholds = 0.2*np.ones(numCores)  # 
+	DeltaSP = 10
 	mm = mig.MigrationManager(numCores,relocationThresholds)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
-	placement_matrix[:, 0] = 1; # in the beginning all threads are on the first core
+	placement_matrix[0:numThreads/2, 0] = 1;     # at the beginning half of the threads are on the first...
+	placement_matrix[numThreads/2+1:-1, -1] = 1; # ... and on the last core
 
 	vU  = np.zeros((tFin,numCores))
 	vUn = np.zeros((tFin,numCores))
+	vSP = np.zeros(tFin)
 
 	## Starting the simulation
-	for kk in xrange(0,tFin+1):
-		# # Scheduling all the cores
-		# if kk == 450:
-		# 	# simulating a migration
-		# 	placement_matrix[0,0] = 0
-		# 	placement_matrix[0,1] = 1
+	for kk in xrange(1,tFin+1):
+		print 'Time %d'%kk
+		# If DeltaSP is elapsed, update the utilization set point
+		if np.mod(kk,DeltaSP)==0:
+			utilizationSetPoint = mm.normalize_load(Schedulers)
+		vSP[kk-1] = utilizationSetPoint[0]
 		for cc in xrange(0,numCores):
 			# Extracting the subset of tasks to be scheduled
 			subset_idx = np.nonzero(placement_matrix[:,cc])[0]
@@ -64,10 +67,19 @@ def main():
 			#Schedulers[cc].viewUtilization()
 			vU[kk-1,cc]  = Schedulers[cc].getUtilization()
 			vUn[kk-1,cc] = Schedulers[cc].getNominalUtilization()
-		placement_matrix = mm.migration_simple(Schedulers, placement_matrix)
+		#placement_matrix = mm.migration_simple(Schedulers, placement_matrix,utilizationSetPoint)
+		placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
 
+	mm.viewTotalMigrations()
+
+	plt.figure(1)
 	plt.plot(xrange(0,tFin),vU)
-	plt.plot(xrange(0,tFin),np.ones(tFin)*1.1*0.6,'--')
+	plt.legend(['Core'+str(i) for i in xrange(0,numCores)])
+	plt.plot(xrange(0,tFin),vSP,'--')
+
+	plt.figure(2)
+	plt.plot(xrange(0,tFin),vUn)
+	plt.plot(xrange(0,tFin),vSP,'--')
 	plt.show()
 
 
