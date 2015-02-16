@@ -7,32 +7,27 @@ class MigrationManager:
 		It implements different migration policies:
 		- migration_simple -> in case of overload in one core, it migrate to a random core
 	"""
-	def __init__(self,numCores,relocation_thresholds):
+	def __init__(self,numCores,relocation_thresholds,padding=1.1,minLoad=0.0,maxLoad=1.0):
 		self.numCores = numCores
 		self.integrated_overload_index = np.zeros(self.numCores)
 		self.relocation_thresholds = relocation_thresholds
 		self.total_migrations = 0  # counter for the number of migrations
-		self.padding = 1.1
+		self.padding = padding
+		self.minLoad = minLoad
+		self.maxLoad = maxLoad
 
 	def migration_simple(self,schedulerList, placement_matrix,utilization_set_point):
 
 	   # initialization
-		migrate = 0;
 		migration_selected = -1
 		migration_source = -1
 		migration_destination = -1
 
-		utilization = np.array([schedulerList[i].getUtilization()\
-			                      for i in xrange(0,self.numCores)])
-		delta       = (utilization - utilization_set_point)/utilization
-		increment   = np.array([max(delta[i],0) for i in xrange(0,self.numCores)])
-
-		self.integrated_overload_index = self.integrated_overload_index + increment
-
+		# update the integrated overload index for all the cores
+		self.updatedOverloadIndex(schedulerList,utilization_set_point)
 
 		migrate_me_maybe = self.integrated_overload_index > self.relocation_thresholds
 		if np.any(migrate_me_maybe) == True:
-			migrate = 1
 			indexes_true  = [i for i in xrange(0,self.numCores) if migrate_me_maybe[i] == True]
 			indexes_false = [i for i in xrange(0,self.numCores) if migrate_me_maybe[i] == False]
 
@@ -47,13 +42,10 @@ class MigrationManager:
 				migration_destination = random.choice(indexes_false)
 
 				# migrating the process on the placement_matrix
-				placement_matrix[migration_selected,migration_source]      = 0
-				placement_matrix[migration_selected,migration_destination] = 1
-
-				self.total_migrations += 1
-
-				# resetting the integrated index
-				self.integrated_overload_index[migration_source] = 0
+				placement_matrix = self.migrate(placement_matrix,\
+					                            migration_selected,\
+					                            migration_source,\
+					                            migration_destination)
 				print '[SIMPLE] Asked to migrate process at index %d from Core%d to Core%d'%\
 				                (migration_selected,migration_source,migration_destination)
 			else:
@@ -66,7 +58,6 @@ class MigrationManager:
 	def migration_load_aware(self,schedulerList, placement_matrix, utilization_set_point, alphas):
 
 		# initialization
-		migrate = 0;
 		migration_selected = -1
 		migration_source = -1
 		migration_destination = -1
@@ -76,12 +67,10 @@ class MigrationManager:
 
 		migrate_me_maybe = self.integrated_overload_index > self.relocation_thresholds
 		if np.any(migrate_me_maybe) == True: # If there is any overloaded core
-			migrate = 1
 			# find the indices of overloaded cores
 			indexes_true  = [i for i in xrange(0,self.numCores) if migrate_me_maybe[i] == True]
 			# find the indices of not overloaded cores
-			indexes_false = [i for i in xrange(0,self.numCores) if migrate_me_maybe[i] == False
-			                                                    if schedulerList[i].getUtilization()<1]
+			indexes_false = [i for i in xrange(0,self.numCores) if migrate_me_maybe[i] == False]
 
 			# migrate the core with a larger value of the overload index
 			# if there are more than one with the same overload index, pick one at random
@@ -111,13 +100,10 @@ class MigrationManager:
 				migration_selected,temp,migration_destination = possible_couples[idx_migration]
 
 				# migrating the process on the placement_matrix
-				placement_matrix[migration_selected,migration_source]      = 0
-				placement_matrix[migration_selected,migration_destination] = 1
-
-				self.total_migrations += 1
-
-				# resetting the integrated index
-				self.integrated_overload_index[migration_source] = 0
+				placement_matrix = self.migrate(placement_matrix,\
+					                            migration_selected,\
+					                            migration_source,\
+					                            migration_destination)
 				print '[LOAD_AWARE] Asked to migrate process at index %d from Core%d to Core%d'%\
 				                (migration_selected,migration_source,migration_destination)
 			else:
@@ -127,18 +113,28 @@ class MigrationManager:
 
 		return placement_matrix
 
+	def migrate(self,placement_matrix,thread,source,dest):
+		placement_matrix[thread,source] = 0
+		placement_matrix[thread,dest]   = 1
+		# increase the number of migrations
+		self.total_migrations += 1
+		# resetting the integrated index
+		self.integrated_overload_index[source] = 0
+
+		return placement_matrix
+
+
 	def normalize_load(self,schedulerList):
 		utilization = np.array([schedulerList[i].getUtilization()\
 			                      for i in xrange(0,self.numCores)])
-		avg_utilization = min(np.sum(utilization)/self.numCores,1.0)
+		avg_utilization = max(min(np.sum(utilization)/self.numCores,self.maxLoad),self.minLoad)
 		utilization_set_point = self.padding*avg_utilization*np.ones(self.numCores)
 		return utilization_set_point
 
 
-
 	def updatedOverloadIndex(self,schedulerList,utilization_set_point):
 		## Updates the value of the integrated overload index
-		utilization = np.array([schedulerList[i].getNominalUtilization()\
+		utilization = np.array([schedulerList[i].getUtilization()\
 			                      for i in xrange(0,self.numCores)])
 		delta = np.zeros(self.numCores)
 		for i in xrange(0,self.numCores):
@@ -147,7 +143,6 @@ class MigrationManager:
 			else: # If the core is not in use
 				delta[i] = 0
 		increment   = np.array([max(delta[i],0) for i in xrange(0,self.numCores)])
-
 		self.integrated_overload_index += increment
 
 	def argMaxSet(self,vec):
@@ -169,6 +164,9 @@ class MigrationManager:
 
 	def getTotalMigrations(self):
 		return self.total_migrations
+
+	def getOverloadIndex(self):
+		return self.integrated_overload_index
 
 	def viewTotalMigrations(self):
 		print 'Total migrations = %d'%self.getTotalMigrations()

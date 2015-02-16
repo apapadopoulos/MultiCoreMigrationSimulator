@@ -16,8 +16,8 @@ import libs.Tests as tst
 
 def main():
 	numCores = 8
-	numThreads = 1000
-	tFin = 1000
+	numThreads = 500
+	tFin = 1500
 
 	## Creating numThreads threads
 	Threads = []
@@ -25,7 +25,7 @@ def main():
 	for i in xrange(0,numThreads):
 		alpha = 0.5*numCores/numThreads
 		alphas.append(alpha)
-		ut.addProcess(Threads,ident=i, alpha=alpha,stdDev=0.0)
+		ut.addProcess(Threads,ident=i, alpha=alpha,stdDev=0.005)
 		Threads[i].viewProcess()
 	alphas = np.array(alphas)
 
@@ -33,19 +33,20 @@ def main():
 	Schedulers = []
 	tauro      = np.zeros(numCores)
 	for i in xrange(0,numCores):
-		Schedulers.append(sched.PIplusPI(ident=i, Kpin=0.25, Kiin=0.25, Kpout=2.0, Kiout=0.25))
+		Schedulers.append(sched.IplusPI(ident=i, Kiin=0.25, Kpout=2.0, Kiout=0.25))
 		tauro[i] = 1
 
 	## Creating a migration manager
 	# Migration data
 	utilizationSetPoint  = 1.0 * np.ones(numCores)  # utilization set point for each core
-	relocationThresholds = 0.2*np.ones(numCores)  # 
-	DeltaSP = 10
+	relocationThresholds = 0.5 * np.ones(numCores)  # 
+	DeltaSP = 20
 	mm = mig.MigrationManager(numCores,relocationThresholds)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
-	placement_matrix[0:numThreads/2, 0] = 1;     # at the beginning half of the threads are on the first...
-	placement_matrix[numThreads/2+1:-1, -1] = 1; # ... and on the last core
+	placement_matrix[:,0] = 1;
+	# placement_matrix[0:numThreads/2, 0] = 1;     # at the beginning half of the threads are on the first...
+	# placement_matrix[numThreads/2+1:-1, -1] = 1; # ... and on the last core
 
 	vU  = np.zeros((tFin,numCores))
 	vUn = np.zeros((tFin,numCores))
