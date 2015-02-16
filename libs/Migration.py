@@ -7,7 +7,7 @@ class MigrationManager:
 		It implements different migration policies:
 		- migration_simple -> in case of overload in one core, it migrate to a random core
 	"""
-	def __init__(self,numCores,relocation_thresholds,padding=1.1,minLoad=0.0,maxLoad=1.0):
+	def __init__(self, numCores, relocation_thresholds, padding=1.1, minLoad=0.0, maxLoad=1.0):
 		self.numCores = numCores
 		self.integrated_overload_index = np.zeros(self.numCores)
 		self.relocation_thresholds = relocation_thresholds
@@ -16,7 +16,7 @@ class MigrationManager:
 		self.minLoad = minLoad
 		self.maxLoad = maxLoad
 
-	def migration_simple(self,schedulerList, placement_matrix,utilization_set_point):
+	def migration_simple(self, schedulerList, placement_matrix, utilization_set_point):
 
 	   # initialization
 		migration_selected = -1
@@ -55,7 +55,7 @@ class MigrationManager:
 
 		return placement_matrix		
 
-	def migration_load_aware(self,schedulerList, placement_matrix, utilization_set_point, alphas):
+	def migration_load_aware(self, schedulerList, placement_matrix, utilization_set_point, alphas):
 
 		# initialization
 		migration_selected = -1
@@ -113,7 +113,7 @@ class MigrationManager:
 
 		return placement_matrix
 
-	def migrate(self,placement_matrix,thread,source,dest):
+	def migrate(self, placement_matrix, thread,source,dest):
 		placement_matrix[thread,source] = 0
 		placement_matrix[thread,dest]   = 1
 		# increase the number of migrations
@@ -124,7 +124,7 @@ class MigrationManager:
 		return placement_matrix
 
 
-	def normalize_load(self,schedulerList):
+	def normalize_load(self, schedulerList):
 		utilization = np.array([schedulerList[i].getUtilization()\
 			                      for i in xrange(0,self.numCores)])
 		avg_utilization = max(min(np.sum(utilization)/self.numCores,self.maxLoad),self.minLoad)
@@ -132,32 +132,34 @@ class MigrationManager:
 		return utilization_set_point
 
 
-	def updatedOverloadIndex(self,schedulerList,utilization_set_point):
+	def updatedOverloadIndex(self, schedulerList, utilization_set_point):
 		## Updates the value of the integrated overload index
 		utilization = np.array([schedulerList[i].getUtilization()\
+			                      for i in xrange(0,self.numCores)])
+		tauros      = np.array([schedulerList[i].getTauro()\
 			                      for i in xrange(0,self.numCores)])
 		delta = np.zeros(self.numCores)
 		for i in xrange(0,self.numCores):
 			if utilization[i] > 0: # If the core is in use
-				delta[i] = (utilization[i] - utilization_set_point[i])/utilization[i]
+				delta[i] = (utilization[i] - utilization_set_point[i])/utilization[i]*tauros[i]
 			else: # If the core is not in use
 				delta[i] = 0
 		increment   = np.array([max(delta[i],0) for i in xrange(0,self.numCores)])
 		self.integrated_overload_index += increment
 
-	def argMaxSet(self,vec):
+	def argMaxSet(self, vec):
 		# find all the indices with maximum value
 		max_val = np.max(vec)
 		indices = [i for i in xrange(0,len(vec)) if vec[i]==max_val]
 		return indices
 
-	def argMinSet(self,vec):
-		# find all the indices with maximum value
+	def argMinSet(self, vec):
+		# find all the indices with minimum value
 		min_val = np.min(vec)
 		indices = [i for i in xrange(0,len(vec)) if vec[i]==min_val]
 		return indices
 
-	def argMaxRand(self,vec):
+	def argMaxRand(self, vec):
 		indices = self.argMaxSet(vec)
 		index = random.choice(indices)
 		return index

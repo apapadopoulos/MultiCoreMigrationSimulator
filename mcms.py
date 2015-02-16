@@ -25,7 +25,7 @@ def main():
 	for i in xrange(0,numThreads):
 		alpha = 0.5*numCores/numThreads
 		alphas.append(alpha)
-		ut.addProcess(Threads,ident=i, alpha=alpha,stdDev=0.005)
+		ut.addProcess(Threads,ident=i, alpha=alpha,stdDev=0.01)
 		Threads[i].viewProcess()
 	alphas = np.array(alphas)
 
@@ -41,7 +41,7 @@ def main():
 	utilizationSetPoint  = 1.0 * np.ones(numCores)  # utilization set point for each core
 	relocationThresholds = 0.5 * np.ones(numCores)  # 
 	DeltaSP = 20
-	mm = mig.MigrationManager(numCores,relocationThresholds)
+	mm = mig.MigrationManager(numCores, relocationThresholds, minLoad=0.1)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
 	placement_matrix[:,0] = 1;

@@ -22,11 +22,17 @@ class IplusPI(Scheduler):
 		self.InnerControllers = []
 		self.numReg = 0
 		self.outerController = ctrl.PI(ident=self.id,Kp = Kpout, Ki = Kiout)
+
+		# Signals
 		self.tauto  = np.zeros(self.numReg)
 		self.tauts  = np.zeros(self.numReg)
 		self.taur   = np.sum(self.tauts)
+		self.tauro  = 0
+
 		self.alphas = np.zeros(self.numReg)
 		self.alphasEff = np.zeros(self.numReg)
+
+		# Controller parameters
 		self.Kiin   = Kiin
 		self.Kpout  = Kpout
 		self.Kiout  = Kiout
@@ -36,6 +42,7 @@ class IplusPI(Scheduler):
 		# 		self.InnerControllers.append(ctrl.I(name='InnerController'+str(i), Ki = Kiin, uMin=0))
 
 	def schedule(self,processList,tauro):
+		self.tauro = tauro
 		# Check if I have already a controller for each thread in processList
 		vidProc = []
 		for i in xrange(0,len(processList)):
@@ -101,6 +108,9 @@ class IplusPI(Scheduler):
 
 	def getTaur(self):
 		return self.taur
+
+	def getTauro(self):
+		return self.tauro
 
 	def findReg(self,ident):
 		# Returns the index of the regulator with a id = ident
@@ -235,6 +245,9 @@ class PIplusPI(Scheduler):
 
 	def getTaur(self):
 		return self.taur
+
+	def getTauro(self):
+		return self.tauro
 
 	def findReg(self,ident):
 		# Returns the index of the regulator with a id = ident
