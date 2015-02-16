@@ -44,9 +44,13 @@ def main():
 	mm = mig.MigrationManager(numCores, relocationThresholds, minLoad=0.1)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
+	# The threads start all on the first core
 	placement_matrix[:,0] = 1;
-	# placement_matrix[0:numThreads/2, 0] = 1;     # at the beginning half of the threads are on the first...
-	# placement_matrix[numThreads/2+1:-1, -1] = 1; # ... and on the last core
+
+	# # Partition of the threads among different cores cores
+	# placement_matrix[0:numThreads/3, 0] = 1;
+	# placement_matrix[numThreads/3+1:2*numThreads/3, -2] = 1;
+	# placement_matrix[2*numThreads/3+1:-1, -1] = 1;
 
 	vU  = np.zeros((tFin,numCores))
 	vUn = np.zeros((tFin,numCores))
