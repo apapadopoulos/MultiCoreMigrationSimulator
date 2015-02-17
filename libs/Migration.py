@@ -23,6 +23,10 @@ class MigrationManager:
 		self.maxLoad = maxLoad
 		self.verb    = verb
 
+		# Update overload index parameters
+		self.K       = 1e-6
+		self.u       = 0
+
 	def migrate(self, placement_matrix, thread,source,dest):
 		# update the placement_matrix
 		placement_matrix[thread,source] = 0
@@ -44,18 +48,24 @@ class MigrationManager:
 
 	def updatedOverloadIndex(self, schedulerList, utilization_set_point):
 		## Update the value of the integrated overload index
-		utilization = np.array([schedulerList[i].getUtilization()\
+		# Computing a correction with an integral controller
+		e = -self.integrated_overload_index
+		self.u = self.u + self.K*e
+
+		utilization = np.array([schedulerList[i].getNominalUtilization()\
 			                      for i in xrange(0,self.numCores)])
 		tauros      = np.array([schedulerList[i].getTauro()\
 			                      for i in xrange(0,self.numCores)])
 		delta = np.zeros(self.numCores)
 		for i in xrange(0,self.numCores):
 			if utilization[i] > 0: # If the core is in use
-				delta[i] = (utilization[i] - utilization_set_point[i])/utilization[i]*tauros[i]
+				delta[i] = (utilization[i] - utilization_set_point[i])/utilization_set_point[i]*tauros[i]
 			else: # If the core is not in use
 				delta[i] = 0
 		increment   = np.array([max(delta[i],0) for i in xrange(0,self.numCores)])
-		self.integrated_overload_index += increment
+		self.integrated_overload_index += increment + self.u
+		self.integrated_overload_index[self.integrated_overload_index<0] = 0
+
 
 	def argMaxSet(self, vec):
 		# Find all the indices with maximum value
@@ -130,7 +140,8 @@ class MigrationManager:
 					                (migration_selected,migration_source,migration_destination)
 			else:
 				# no cores are underloaded
-				#print '[SIMPLE] No migration possible'
+				# Reset all the overload indices
+				self.integrated_overload_index[:] = 0
 				migration_destination = migration_source
 
 		return placement_matrix		
@@ -190,6 +201,8 @@ class MigrationManager:
 					                (migration_selected,migration_source,migration_destination)
 			else:
 				# no cores are underloaded
+				# Reset all the overload indices
+				self.integrated_overload_index[:] = 0
 				migration_destination = migration_source
 
 		return placement_matrix

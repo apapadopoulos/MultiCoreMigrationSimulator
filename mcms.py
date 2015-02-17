@@ -141,6 +141,7 @@ def main():
 	vUn = np.zeros((tFin,numCores))
 	vU  = np.zeros((tFin,numCores))
 	vmig= np.zeros((tFin,1))
+	vOI = np.zeros((tFin,numCores))
 
 	## Starting the simulation
 	print '[%s] started with numCores=%d, numThreads=%d, tFin=%d...'%(args.migration,args.numCores,args.numThreads,args.simTime)
@@ -158,6 +159,8 @@ def main():
 			#Schedulers[cc].viewUtilization()
 			vU[kk-1,cc]  = Schedulers[cc].getUtilization()
 			vUn[kk-1,cc] = Schedulers[cc].getNominalUtilization()
+
+		vOI[kk-1,:] = mm.getOverloadIndex()
 
 		# Apply migration algorithm
 		if migration=='simple':
@@ -187,6 +190,10 @@ def main():
 		plt.figure(2)
 		plt.plot(xrange(0,tFin),vUn)
 		plt.plot(xrange(0,tFin),vSP,'--')
+
+		plt.figure(3)
+		plt.plot(xrange(0,tFin),vOI)
+		plt.plot(xrange(0,tFin),args.relocationThreshold*np.ones(tFin),'k--')
 		plt.show()
 
 	if args.save:
@@ -198,13 +205,16 @@ def main():
 			header += 'NominalUtilizationCore'+str(cc)+','
 		for cc in xrange(0,numCores):
 			header += 'UtilizationCore'+str(cc)+','
+		for cc in xrange(0,numCores):
+			header += 'OverloadIndex'+str(cc)+','
 		header += 'TotalMigrations'
 
-		M      = np.hstack((vkk,vSP,vUn,vU,vmig))
+		M      = np.hstack((vkk,vSP,vUn,vU,vOI,vmig))
 		ut.save_results(args.outdir+'results_'\
 								   +migration+'_'\
 			 					   +'numCores'+str(numCores)+'_'\
-								   +'numThreads'+str(numThreads)\
+								   +'numThreads'+str(numThreads)+'_'\
+								   +'relocationThreshold'+str(args.relocationThreshold)\
 								   +'.csv', M, header=header)
 
 
