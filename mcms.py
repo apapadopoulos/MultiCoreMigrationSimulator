@@ -83,6 +83,11 @@ def main():
 		help = 'Options to save data or not.',
 		default = 1)
 
+	parser.add_argument('--verb',
+		type = int,
+		help = 'Options to have a verbose execution.',
+		default = 0)
+
 	# Parsing the command line inputs
 	args = parser.parse_args()
 
@@ -138,8 +143,10 @@ def main():
 	vmig= np.zeros((tFin,1))
 
 	## Starting the simulation
+	print '[%s] started...'%args.migration
 	for kk in xrange(1,tFin+1):
-		ut.progress(kk,tFin, bar_length=20)
+		if args.verb:
+			ut.progress(kk,tFin, bar_length=20)
 
 		vkk[kk-1,:] = kk
 		for cc in xrange(0,numCores):
@@ -166,8 +173,10 @@ def main():
 		# Saving the utilization setpoint
 		vSP[kk-1,:] = utilizationSetPoint
 		vmig[kk-1,:] = mm.getTotalMigrations()
-	print '\nSimulation finished!\n'
-	mm.viewTotalMigrations()
+	if args.verb:
+		print '\nSimulation finished!\n'
+		mm.viewTotalMigrations()
+	print '[%s] finished!'%args.migration
 
 	if args.plot:
 		plt.figure(1)

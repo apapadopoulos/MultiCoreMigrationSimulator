@@ -1,3 +1,5 @@
 *.zip
 *.pyc
 */*.pyc
+results/
+*/*.csv
