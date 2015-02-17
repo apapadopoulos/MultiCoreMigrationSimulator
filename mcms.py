@@ -4,6 +4,8 @@ import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
 
+import argparse
+import os
 import sys
 
 import libs.Process as proc
@@ -19,9 +21,53 @@ def main():
 	#  - add argv with numCores, numThreads, tFin from commandLine
 	#  - add print on a file results
 	#  - re-write for loops in a more efficient way
-	numCores = 8
-	numThreads = 500
-	tFin = 1500
+
+	## Manage command line inputs
+
+	# Defining command line options to find out the algorithm
+	parser = argparse.ArgumentParser( \
+		description='Run multicore migration simulator.', \
+		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+	migrAlgos = ("simple load_aware load_normalized").split()
+
+	parser.add_argument('--migration',
+		help = 'Migration algorithm: ' + ' '.join(migrAlgos),
+		default = migrAlgos[0])
+	parser.add_argument('--outdir',
+		help = 'Destination folder for results and logs',
+		default = '.')
+
+	parser.add_argument('--simTime',
+		type = int,
+		help = 'Simulation time.',
+		default = 1000)
+
+	parser.add_argument('--numThreads',
+		type = int,
+		help = 'Number of threads.',
+		default = 500)
+
+	parser.add_argument('--numCores',
+		type = int,
+		help = 'Number of threads.',
+		default = 8)
+
+	# Parsing the command line inputs
+	args = parser.parse_args()
+
+	# Migration algorithm
+	migration = args.migration
+	if migration not in migrAlgos:
+		print "Unsupported algorithm %s"%format(migration)
+		parser.print_help()
+		quit()
+
+
+	## The program starts here
+	numCores = args.numCores
+	numThreads = args.numThreads
+	tFin = args.simTime
 
 	## Creating numThreads threads
 	Threads = []

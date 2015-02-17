@@ -46,9 +46,10 @@ class IplusPI(Scheduler):
 
 	def schedule(self,processList,tauro):
 		self.tauro = tauro
+		numProc = len(processList)
 		# Check if I have already a controller for each thread in processList
 		vidProc = []
-		for i in xrange(0,len(processList)):
+		for i in xrange(0,numProc):
 			ident = processList[i].getID()
 			idx   = self.findReg(ident)
 			if idx == -1:
@@ -56,7 +57,6 @@ class IplusPI(Scheduler):
 			vidProc.append(ident)
 
 		# Removing the unnecessary regulators
-		
 		vidReg = [self.InnerControllers[i].getID() for i in xrange(0,self.numReg)]
 		toElim = [reg for reg in vidReg if reg not in vidProc]
 		for i in toElim:
@@ -65,8 +65,9 @@ class IplusPI(Scheduler):
 
 
 		# At this point I should have numReg = len(processList)
-		if self.numReg != len(processList):
-			print '[Scheduler%d] Error! I do not have the right amount of controllers! %d!=%d'%(self.id,self.numReg,len(processList))
+		if self.numReg != numProc:
+			print '[Scheduler%d] Error! I do not have the right amount of controllers! %d!=%d'%\
+			       (self.id,self.numReg,numProc)
 			sys.exit()
 
 		#########################
@@ -85,7 +86,7 @@ class IplusPI(Scheduler):
 
 
 		# Schedule all the processes
-		for i in xrange(0,len(processList)):
+		for i in xrange(0,numProc):
 			idxReg = self.findReg(processList[i].getID())
 			self.alphas[idxReg] = processList[i].getAlpha()
 			self.tauto[idxReg]  = (self.bc + self.taur)*self.alphas[idxReg]
@@ -168,11 +169,16 @@ class PIplusPI(Scheduler):
 		self.InnerControllers = []
 		self.numReg = 0
 		self.outerController = ctrl.PI(ident=self.id,Kp = Kpout, Ki = Kiout)
+
+		# Signals
 		self.tauto  = np.zeros(self.numReg)
 		self.tauts  = np.zeros(self.numReg)
 		self.taur   = np.sum(self.tauts)
+		self.tauro  = 0
 		self.alphas = np.zeros(self.numReg)
 		self.alphasEff = np.zeros(self.numReg)
+
+		# Parameters
 		self.Kpin   = Kpin
 		self.Kiin   = Kiin
 		self.Kpout  = Kpout
@@ -183,9 +189,11 @@ class PIplusPI(Scheduler):
 		# 		self.InnerControllers.append(ctrl.I(name='InnerController'+str(i), Ki = Kiin, uMin=0))
 
 	def schedule(self,processList,tauro):
+		self.tauro = tauro
+		numProc = len(processList)
 		# Check if I have already a controller for each thread in processList
 		vidProc = []
-		for i in xrange(0,len(processList)):
+		for i in xrange(0,numProc):
 			ident = processList[i].getID()
 			idx   = self.findReg(ident)
 			if idx == -1:
@@ -202,8 +210,9 @@ class PIplusPI(Scheduler):
 
 
 		# At this point I should have numReg = len(processList)
-		if self.numReg != len(processList):
-			print '[Scheduler%d] Error! I do not have the right amount of controllers! %d!=%d'%(self.id,self.numReg,len(processList))
+		if self.numReg != numProc:
+			print '[Scheduler%d] Error! I do not have the right amount of controllers! %d!=%d'%\
+			       (self.id,self.numReg,numProc)
 			sys.exit()
 
 		#########################
@@ -222,7 +231,7 @@ class PIplusPI(Scheduler):
 
 
 		# Schedule all the processes
-		for i in xrange(0,len(processList)):
+		for i in xrange(0,numProc):
 			idxReg = self.findReg(processList[i].getID())
 			self.alphas[idxReg] = processList[i].getAlpha()
 			self.tauto[idxReg]  = (self.bc + self.taur)*self.alphas[idxReg]

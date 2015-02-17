@@ -21,6 +21,71 @@ class MigrationManager:
 		self.minLoad = minLoad
 		self.maxLoad = maxLoad
 
+	def migrate(self, placement_matrix, thread,source,dest):
+		# update the placement_matrix
+		placement_matrix[thread,source] = 0
+		placement_matrix[thread,dest]   = 1
+		# increase the number of migrations
+		self.total_migrations += 1
+		# resetting the integrated index
+		self.integrated_overload_index[source] = 0
+
+		return placement_matrix
+
+	def normalize_load(self, schedulerList):
+		## Normalize the load with respect to the actual utilization
+		utilization = np.array([schedulerList[i].getUtilization()\
+			                      for i in xrange(0,self.numCores)])
+		avg_utilization = max(min(np.sum(utilization)/self.numCores,self.maxLoad),self.minLoad)
+		utilization_set_point = self.padding*avg_utilization*np.ones(self.numCores)
+		return utilization_set_point
+
+	def updatedOverloadIndex(self, schedulerList, utilization_set_point):
+		## Update the value of the integrated overload index
+		utilization = np.array([schedulerList[i].getUtilization()\
+			                      for i in xrange(0,self.numCores)])
+		tauros      = np.array([schedulerList[i].getTauro()\
+			                      for i in xrange(0,self.numCores)])
+		delta = np.zeros(self.numCores)
+		for i in xrange(0,self.numCores):
+			if utilization[i] > 0: # If the core is in use
+				delta[i] = (utilization[i] - utilization_set_point[i])/utilization[i]*tauros[i]
+			else: # If the core is not in use
+				delta[i] = 0
+		increment   = np.array([max(delta[i],0) for i in xrange(0,self.numCores)])
+		self.integrated_overload_index += increment
+
+	def argMaxSet(self, vec):
+		# Find all the indices with maximum value
+		max_val = np.max(vec)
+		indices = [i for i in xrange(0,len(vec)) if vec[i]==max_val]
+		return indices
+
+	def argMinSet(self, vec):
+		# Find all the indices with minimum value
+		min_val = np.min(vec)
+		indices = [i for i in xrange(0,len(vec)) if vec[i]==min_val]
+		return indices
+
+	def argMaxRand(self, vec):
+		# Find the index with maximum value. If there is more than one
+		# a random index is chosen
+		indices = self.argMaxSet(vec)
+		index = random.choice(indices)
+		return index
+
+	def getTotalMigrations(self):
+		return self.total_migrations
+
+	def getOverloadIndex(self):
+		return self.integrated_overload_index
+
+	def viewTotalMigrations(self):
+		print 'Total migrations = %d'%self.getTotalMigrations()
+
+	########################
+	# Migration algorithms 
+	########################
 	def migration_simple(self, schedulerList, placement_matrix, utilization_set_point):
 
 	   # initialization
@@ -117,64 +182,4 @@ class MigrationManager:
 				migration_destination = migration_source
 
 		return placement_matrix
-
-	def migrate(self, placement_matrix, thread,source,dest):
-		placement_matrix[thread,source] = 0
-		placement_matrix[thread,dest]   = 1
-		# increase the number of migrations
-		self.total_migrations += 1
-		# resetting the integrated index
-		self.integrated_overload_index[source] = 0
-
-		return placement_matrix
-
-
-	def normalize_load(self, schedulerList):
-		utilization = np.array([schedulerList[i].getUtilization()\
-			                      for i in xrange(0,self.numCores)])
-		avg_utilization = max(min(np.sum(utilization)/self.numCores,self.maxLoad),self.minLoad)
-		utilization_set_point = self.padding*avg_utilization*np.ones(self.numCores)
-		return utilization_set_point
-
-
-	def updatedOverloadIndex(self, schedulerList, utilization_set_point):
-		## Updates the value of the integrated overload index
-		utilization = np.array([schedulerList[i].getUtilization()\
-			                      for i in xrange(0,self.numCores)])
-		tauros      = np.array([schedulerList[i].getTauro()\
-			                      for i in xrange(0,self.numCores)])
-		delta = np.zeros(self.numCores)
-		for i in xrange(0,self.numCores):
-			if utilization[i] > 0: # If the core is in use
-				delta[i] = (utilization[i] - utilization_set_point[i])/utilization[i]*tauros[i]
-			else: # If the core is not in use
-				delta[i] = 0
-		increment   = np.array([max(delta[i],0) for i in xrange(0,self.numCores)])
-		self.integrated_overload_index += increment
-
-	def argMaxSet(self, vec):
-		# find all the indices with maximum value
-		max_val = np.max(vec)
-		indices = [i for i in xrange(0,len(vec)) if vec[i]==max_val]
-		return indices
-
-	def argMinSet(self, vec):
-		# find all the indices with minimum value
-		min_val = np.min(vec)
-		indices = [i for i in xrange(0,len(vec)) if vec[i]==min_val]
-		return indices
-
-	def argMaxRand(self, vec):
-		indices = self.argMaxSet(vec)
-		index = random.choice(indices)
-		return index
-
-	def getTotalMigrations(self):
-		return self.total_migrations
-
-	def getOverloadIndex(self):
-		return self.integrated_overload_index
-
-	def viewTotalMigrations(self):
-		print 'Total migrations = %d'%self.getTotalMigrations()
 
