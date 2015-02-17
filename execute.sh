@@ -9,7 +9,7 @@ for algorithm in "${algs[@]}"
 do
 	for nT in 100 250 500
 	do
-		for rT in 0.1 0.2 0.5
+		for rT in 0.1 0.2 0.5 1.0
 		do
 		    mkdir -p results/${algorithm}
 		    ./mcms.py --migration ${algorithm} --outdir results/${algorithm}/ --simTime 1500 --numThreads ${nT} --numCores 8 --deltaSP 10 --relocationThreshold ${rT} $@ &
