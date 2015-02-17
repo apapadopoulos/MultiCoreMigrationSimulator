@@ -6,6 +6,8 @@ import copy as cp
 import libs.Process as proc
 
 import sys
+import os
+import errno
 
 
 def addProcess(procList,ident=None, alpha=1,stdDev=0.01):
@@ -37,3 +39,17 @@ def removeProcess(procList,ident):
 	else:
 		print 'Cannot find process with ID = %d'%ident
 	return numThreads
+
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+
+def save_results(path, M, header=None):
+	# Saving a csv file
+	np.savetxt(path, M, delimiter=',',header=header)

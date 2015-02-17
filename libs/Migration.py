@@ -158,8 +158,10 @@ class MigrationManager:
 
 				# constructing the matrix of all the possible migrations
 				possible_couples    = [(i,alphas[i],j) for i in index_threads for j in indexes_false]
-				possible_migrations = [abs(j - alphas[i]) for i in index_threads\
-				                                          for j in spare_capacity]
+				possible_migrations = [j - alphas[i] for i in index_threads\
+				                                     for j in spare_capacity]
+				# eliminate negative options
+				possible_migrations[possible_migrations<0] = None
 
 				# Identifying which is the best migration
 				indices_possible_migrations = self.argMinSet(possible_migrations)

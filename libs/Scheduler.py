@@ -20,8 +20,9 @@ class Scheduler(object):
 class IplusPI(Scheduler):
 	"""docstring for IplusPI"""
 
-	def __init__(self, ident, Kiin=0.25, Kpout=1.4, Kiout=0.168):
+	def __init__(self, ident, Kiin=0.25, Kpout=1.4, Kiout=0.168, verb=False):
 		self.id = ident
+		self.verb = verb
 		self.InnerControllers = []
 		self.numReg = 0
 		self.outerController = ctrl.PI(ident=self.id,Kp = Kpout, Ki = Kiout)
@@ -127,7 +128,8 @@ class IplusPI(Scheduler):
 	def addReg(self,process):
 		self.numReg += 1
 		self.InnerControllers.append(ctrl.I(ident=process.getID(),Ki=self.Kiin,uMin=0))
-		print '[Scheduler%d] Added regulator with id = %d'%(self.id,process.getID())
+		if self.verb:
+			print '[Scheduler%d] Added regulator with id = %d'%(self.id,process.getID())
 		self.tauto = np.append(self.tauto,0)
 		self.tauts = np.append(self.tauts,0)
 		self.taur  = np.sum(self.tauts)
@@ -143,7 +145,8 @@ class IplusPI(Scheduler):
 			self.taur  = np.sum(self.tauts)
 			self.alphas = np.delete(self.alphas,idx)
 			self.numReg = len(self.InnerControllers)
-			print '[Scheduler%d] Removed regulator with id = %d'%(self.id,ident)
+			if self.verb:
+				print '[Scheduler%d] Removed regulator with id = %d'%(self.id,ident)
 		else:
 			print '[Scheduler%d] Cannot remove Regulator with id = %d'%(self.id,ident)
 
