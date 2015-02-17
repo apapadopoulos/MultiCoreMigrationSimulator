@@ -149,18 +149,18 @@ def main():
 		
 	mm.viewTotalMigrations()
 
-	plt.figure(1)
-	plt.plot(xrange(0,tFin),vU)
-	plt.legend(['Core'+str(i) for i in xrange(0,numCores)])
-	plt.plot(xrange(0,tFin),vSP,'--')
+	# plt.figure(1)
+	# plt.plot(xrange(0,tFin),vU)
+	# plt.legend(['Core'+str(i) for i in xrange(0,numCores)])
+	# plt.plot(xrange(0,tFin),vSP,'--')
 
-	plt.figure(2)
-	plt.plot(xrange(0,tFin),vUn)
-	plt.plot(xrange(0,tFin),vSP,'--')
-	plt.show()
+	# plt.figure(2)
+	# plt.plot(xrange(0,tFin),vUn)
+	# plt.plot(xrange(0,tFin),vSP,'--')
+	# plt.show()
 
 	# SavingResults
-	header = 'Round'
+	header = 'Round,'
 	for cc in xrange(0,numCores):
 		header += 'SetPointUtilization'+str(cc)+','
 	for cc in xrange(0,numCores):
@@ -169,12 +169,12 @@ def main():
 		header += 'UtilizationCore'+str(cc)+','
 	header += 'TotalMigrations'
 
-	# M      = np.hstack((vkk,vSP,vUn,vU,vmig))
-	# ut.save_results(args.outdir+'results_'+\
-	# 						   +migration+'_'
-	# 	                       +'numCores'+str(numCores)+'_'\
-	# 	                       +'numThreads'+str(numThreads)\
-	# 	                       +'.csv', M, header=None)
+	M      = np.hstack((vkk,vSP,vUn,vU,vmig))
+	ut.save_results(args.outdir+'results_'\
+							   +migration+'_'\
+		 					   +'numCores'+str(numCores)+'_'\
+							   +'numThreads'+str(numThreads)\
+							   +'.csv', M, header=header)
 
 
 def tests():
