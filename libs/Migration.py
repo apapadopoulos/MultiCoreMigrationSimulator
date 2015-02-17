@@ -52,7 +52,7 @@ class MigrationManager:
 		e = -self.integrated_overload_index
 		self.u = self.u + self.K*e
 
-		utilization = np.array([schedulerList[i].getUtilization()\
+		utilization = np.array([schedulerList[i].getNominalUtilization()\
 			                      for i in xrange(0,self.numCores)])
 		tauros      = np.array([schedulerList[i].getTauro()\
 			                      for i in xrange(0,self.numCores)])
