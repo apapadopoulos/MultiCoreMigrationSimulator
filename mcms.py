@@ -53,6 +53,16 @@ def main():
 		help = 'Number of threads.',
 		default = 8)
 
+	parser.add_argument('--utilizationSetPoint',
+		type = float,
+		help = 'Relocation threashold.',
+		default = 1.0)
+	
+	parser.add_argument('--relocationThreshold',
+		type = float,
+		help = 'Relocation threashold.',
+		default = 0.5)
+
 	parser.add_argument('--deltaSP',
 		type = int,
 		help = 'Set point update period (Valid only with load_normalized!).',
@@ -63,6 +73,15 @@ def main():
 		help = 'Padding for the adaptation of the set point (Valid only with load_normalized!).',
 		default = 1.1)
 
+	parser.add_argument('--plot',
+		type = int,
+		help = 'Option to show graphs or not.',
+		default = 0)
+
+	parser.add_argument('--save',
+		type = int,
+		help = 'Options to save data or not.',
+		default = 1)
 
 	# Parsing the command line inputs
 	args = parser.parse_args()
@@ -76,8 +95,9 @@ def main():
 	# Creating the directory where to store the results
 	ut.mkdir_p(args.outdir)
 
-
+	##############################
 	## The program starts here
+	##############################
 	numCores = args.numCores
 	numThreads = args.numThreads
 	tFin = args.simTime
@@ -89,7 +109,7 @@ def main():
 		alpha = 0.5*numCores/numThreads
 		alphas.append(alpha)
 		ut.addProcess(Threads,ident=i, alpha=alpha,stdDev=0.005)
-		Threads[i].viewProcess()
+		# Threads[i].viewProcess()
 	alphas = np.array(alphas)
 
 	## Creating one scheduler for each core
@@ -101,10 +121,10 @@ def main():
 
 	## Creating a migration manager
 	# Migration data
-	utilizationSetPoint  = 1.0 * np.ones(numCores)  # utilization set point for each core
-	relocationThresholds = 0.5 * np.ones(numCores)  # 
+	utilizationSetPoint  = args.utilizationSetPoint * np.ones(numCores)  # utilization set point for each core
+	relocationThresholds = args.relocationThreshold * np.ones(numCores)  # Thresholds
 	DeltaSP = args.deltaSP
-	mm = mig.MigrationManager(numCores, relocationThresholds, minLoad=0.1, padding=args.padding)
+	mm = mig.MigrationManager(numCores, relocationThresholds, minLoad=0.1, padding=args.padding, verb=False)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
 	# The threads start all on the first core
@@ -119,8 +139,8 @@ def main():
 
 	## Starting the simulation
 	for kk in xrange(1,tFin+1):
-		if np.mod(kk,100)==0:
-			print 'Time %d'%kk
+		ut.progress(kk,tFin, bar_length=20)
+
 		vkk[kk-1,:] = kk
 		for cc in xrange(0,numCores):
 			# Extracting the subset of tasks to be scheduled
@@ -146,35 +166,37 @@ def main():
 		# Saving the utilization setpoint
 		vSP[kk-1,:] = utilizationSetPoint
 		vmig[kk-1,:] = mm.getTotalMigrations()
-		
+	print '\nSimulation finished!\n'
 	mm.viewTotalMigrations()
 
-	# plt.figure(1)
-	# plt.plot(xrange(0,tFin),vU)
-	# plt.legend(['Core'+str(i) for i in xrange(0,numCores)])
-	# plt.plot(xrange(0,tFin),vSP,'--')
+	if args.plot:
+		plt.figure(1)
+		plt.plot(xrange(0,tFin),vU)
+		plt.legend(['Core'+str(i) for i in xrange(0,numCores)])
+		plt.plot(xrange(0,tFin),vSP,'--')
 
-	# plt.figure(2)
-	# plt.plot(xrange(0,tFin),vUn)
-	# plt.plot(xrange(0,tFin),vSP,'--')
-	# plt.show()
+		plt.figure(2)
+		plt.plot(xrange(0,tFin),vUn)
+		plt.plot(xrange(0,tFin),vSP,'--')
+		plt.show()
 
-	# SavingResults
-	header = 'Round,'
-	for cc in xrange(0,numCores):
-		header += 'SetPointUtilization'+str(cc)+','
-	for cc in xrange(0,numCores):
-		header += 'NominalUtilizationCore'+str(cc)+','
-	for cc in xrange(0,numCores):
-		header += 'UtilizationCore'+str(cc)+','
-	header += 'TotalMigrations'
+	if args.save:
+		# Saving results in the outdir directory
+		header = 'Round,'
+		for cc in xrange(0,numCores):
+			header += 'SetPointUtilization'+str(cc)+','
+		for cc in xrange(0,numCores):
+			header += 'NominalUtilizationCore'+str(cc)+','
+		for cc in xrange(0,numCores):
+			header += 'UtilizationCore'+str(cc)+','
+		header += 'TotalMigrations'
 
-	M      = np.hstack((vkk,vSP,vUn,vU,vmig))
-	ut.save_results(args.outdir+'results_'\
-							   +migration+'_'\
-		 					   +'numCores'+str(numCores)+'_'\
-							   +'numThreads'+str(numThreads)\
-							   +'.csv', M, header=header)
+		M      = np.hstack((vkk,vSP,vUn,vU,vmig))
+		ut.save_results(args.outdir+'results_'\
+								   +migration+'_'\
+			 					   +'numCores'+str(numCores)+'_'\
+								   +'numThreads'+str(numThreads)\
+								   +'.csv', M, header=header)
 
 
 def tests():

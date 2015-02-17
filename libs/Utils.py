@@ -40,8 +40,6 @@ def removeProcess(procList,ident):
 		print 'Cannot find process with ID = %d'%ident
 	return numThreads
 
-
-
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -53,3 +51,10 @@ def mkdir_p(path):
 def save_results(path, M, header=None):
 	# Saving a csv file
 	np.savetxt(path, M, delimiter=',',header=header)
+
+def progress(val,end_val, bar_length=20):
+    percent = float(val) / end_val
+    hashes = '#' * int(round(percent * bar_length))
+    spaces = ' ' * (bar_length - len(hashes))
+    sys.stdout.write("\rPercent: [{0}] {1}%".format(hashes + spaces, int(round(percent * 100))))
+    sys.stdout.flush()

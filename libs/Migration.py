@@ -1,6 +1,7 @@
 import numpy as np
 import scipy as sp
 import random
+import time
 
 ## TODOs:
 #  - re-write all the for loops in a more efficient way
@@ -12,7 +13,7 @@ class MigrationManager:
 		It implements different migration policies:
 		- migration_simple -> in case of overload in one core, it migrate to a random core
 	"""
-	def __init__(self, numCores, relocation_thresholds, padding=1.1, minLoad=0.0, maxLoad=1.0):
+	def __init__(self, numCores, relocation_thresholds, padding=1.1, minLoad=0.0, maxLoad=1.0,verb=False):
 		self.numCores = numCores
 		self.integrated_overload_index = np.zeros(self.numCores)
 		self.relocation_thresholds = relocation_thresholds
@@ -20,6 +21,7 @@ class MigrationManager:
 		self.padding = padding
 		self.minLoad = minLoad
 		self.maxLoad = maxLoad
+		self.verb    = verb
 
 	def migrate(self, placement_matrix, thread,source,dest):
 		# update the placement_matrix
@@ -74,6 +76,13 @@ class MigrationManager:
 		index = random.choice(indices)
 		return index
 
+	def argMinRand(self, vec):
+		# Find the index with maximum value. If there is more than one
+		# a random index is chosen
+		indices = self.argMinSet(vec)
+		index = random.choice(indices)
+		return index
+
 	def getTotalMigrations(self):
 		return self.total_migrations
 
@@ -116,8 +125,9 @@ class MigrationManager:
 					                            migration_selected,\
 					                            migration_source,\
 					                            migration_destination)
-				print '[SIMPLE] Asked to migrate process at index %d from Core%d to Core%d'%\
-				                (migration_selected,migration_source,migration_destination)
+				if self.verb:
+					print '[SIMPLE] Migrating process%d from Core%d to Core%d'%\
+					                (migration_selected,migration_source,migration_destination)
 			else:
 				# no cores are underloaded
 				#print '[SIMPLE] No migration possible'
@@ -160,8 +170,6 @@ class MigrationManager:
 				possible_couples    = [(i,alphas[i],j) for i in index_threads for j in indexes_false]
 				possible_migrations = [j - alphas[i] for i in index_threads\
 				                                     for j in spare_capacity]
-				# eliminate negative options
-				possible_migrations[possible_migrations<0] = None
 
 				# Identifying which is the best migration
 				indices_possible_migrations = self.argMinSet(possible_migrations)
@@ -176,11 +184,12 @@ class MigrationManager:
 					                            migration_selected,\
 					                            migration_source,\
 					                            migration_destination)
-				print '[LOAD_AWARE] Asked to migrate process at index %d from Core%d to Core%d'%\
-				                (migration_selected,migration_source,migration_destination)
+
+				if self.verb:
+					print '[LOAD_AWARE] Migrating process%d from Core%d to Core'%\
+					                (migration_selected,migration_source,migration_destination)
 			else:
 				# no cores are underloaded
-				#print '[SIMPLE] No migration possible'
 				migration_destination = migration_source
 
 		return placement_matrix
