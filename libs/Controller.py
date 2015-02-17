@@ -78,17 +78,8 @@ class PI(Controller):
 
 
 	def limit(self,u):
-		if self.uMin == None:
-			if self.uMax == None:
-				return u
-			else:
-				return np.min(u,self.uMax)
-		else:
-			if self.uMax == None:
-				return np.max(u,self.uMin)
-			else:
-				return np.max(np.min(u,self.uMax),self.uMin)
-
+		# Apply saturations
+		return np.max(np.min(u,self.uMax),self.uMin)
 
 	def computeU(self,yo,y):
 		self.yo = yo;
