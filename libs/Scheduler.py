@@ -8,11 +8,14 @@ import sys
 import libs.Process as proc
 import libs.Controller as ctrl
 
+## TODOs:
+#  - re-write all the for loops in a more efficient way
+#  - better exploit inheritance
 
 class Scheduler(object):
 	"""docstring for Scheduler"""
-	def __init__(self, name):
-		self.name = name
+	def __init__(self, ident):
+		self.id = ident
 
 class IplusPI(Scheduler):
 	"""docstring for IplusPI"""

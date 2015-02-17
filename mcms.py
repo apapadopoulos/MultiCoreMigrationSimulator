@@ -15,6 +15,10 @@ import libs.Tests as tst
 
 
 def main():
+	## TODOs: 
+	#  - add argv with numCores, numThreads, tFin from commandLine
+	#  - add print on a file results
+	#  - re-write for loops in a more efficient way
 	numCores = 8
 	numThreads = 500
 	tFin = 1500

@@ -2,6 +2,11 @@ import numpy as np
 import scipy as sp
 import random
 
+## TODOs:
+#  - re-write all the for loops in a more efficient way
+#  - better exploit inheritance
+#  - add migration of multiple process
+
 class MigrationManager:
 	""" Migration manager decides when to migrate a process from one core to another.
 		It implements different migration policies:

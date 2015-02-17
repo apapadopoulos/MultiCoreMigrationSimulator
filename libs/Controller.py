@@ -1,6 +1,10 @@
 import numpy as np
 import scipy as sp
 
+## TODOs:
+#  - re-write all the for loops in a more efficient way
+#  - better exploit inheritance
+
 class Controller:
 	""" Definition of a Controller
 	    Computes a control action according to a control law
@@ -12,6 +16,10 @@ class Controller:
 	"""
 	def __init__(self, ident):
 		self.id = ident
+
+	def getID(self):
+		return self.id
+
 
 class PID(Controller):
 	"""docstring for PID"""
@@ -46,9 +54,6 @@ class PID(Controller):
 		self.I = self.I + self.K/self.Ti*self.e
 		self.yOld = self.y;
 
-	def getID(self):
-		return self.id
-
 class PI(Controller):
 	"""PI controller with transfer function
 	   R(z) = Kp + Ki/(z-1)
@@ -58,13 +63,16 @@ class PI(Controller):
 		self.id   = ident
 		self.Kp   = Kp
 		self.Ki   = Ki
+
 		# Signals
 		self.u    = 0
 		self.e    = 0
 		self.y    = 0
+
 		# States
 		self.eOld = 0
 
+		# Saturations
 		self.uMin = uMin
 		self.uMax = uMax
 
@@ -103,39 +111,25 @@ class PI(Controller):
 	def getKi(self):
 		return self.Ki
 
-	def getID(self):
-		return self.id
 
 
-
-class I(Controller):
+class I(PI):
 	"""Integral controller with trasnfer function
 	   R(z) = Ki/(z-1)
 	"""
 
 	def __init__(self, ident, Ki,uMin=None,uMax=None):
 		self.id   = ident
+		self.Kp   = 0
 		self.Ki   = Ki
 		# Signals
 		self.u    = 0
 		self.e    = 0
 		self.y    = 0
 
-
+		# Saturations
 		self.uMin = uMin
 		self.uMax = uMax
-
-	def limit(self,u):
-		if self.uMin == None:
-			if self.uMax == None:
-				return u
-			else:
-				return np.min(u,self.uMax)
-		else:
-			if self.uMax == None:
-				return np.max(u,self.uMin)
-			else:
-				return np.max(np.min(u,self.uMax),self.uMin)
 
 	def computeU(self,yo,y):
 		self.yo = yo;
@@ -146,11 +140,5 @@ class I(Controller):
 
 
 		return self.u
-
-	def getKi(self):
-		return self.Ki
-
-	def getID(self):
-		return self.id
 
 
