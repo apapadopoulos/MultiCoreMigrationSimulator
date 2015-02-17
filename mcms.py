@@ -56,7 +56,7 @@ def main():
 	parser.add_argument('--utilizationSetPoint',
 		type = float,
 		help = 'Relocation threashold.',
-		default = 1.0)
+		default = 0.55)
 	
 	parser.add_argument('--relocationThreshold',
 		type = float,
@@ -143,7 +143,7 @@ def main():
 	vmig= np.zeros((tFin,1))
 
 	## Starting the simulation
-	print '[%s] started...'%args.migration
+	print '[%s] started with numCores=%d, numThreads=%d, tFin=%d...'%(args.migration,args.numCores,args.numThreads,args.simTime)
 	for kk in xrange(1,tFin+1):
 		if args.verb:
 			ut.progress(kk,tFin, bar_length=20)
@@ -176,7 +176,7 @@ def main():
 	if args.verb:
 		print '\nSimulation finished!\n'
 		mm.viewTotalMigrations()
-	print '[%s] finished!'%args.migration
+	print '[%s] simulation with numCores=%d, numThreads=%d, tFin=%d: finished!'%(args.migration,args.numCores,args.numThreads,args.simTime)
 
 	if args.plot:
 		plt.figure(1)
