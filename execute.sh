@@ -12,6 +12,7 @@ do
 		for pad in 1.0 1.05 1.1 1.2 1.5
 		do
 			for rT in 0.5 1.0
+			do
 				for cc in 2 4 8 16 32 64 128
 				do
 				    mkdir -p results/${algorithm}
