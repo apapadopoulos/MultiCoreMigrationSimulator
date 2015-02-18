@@ -57,7 +57,10 @@ class MigrationManager:
 		# 	                      for i in xrange(0,self.numCores)])
 		utilization = self.avgLoad
 		avg_utilization = max(min(self.padding*np.sum(utilization)/self.numCores,self.maxLoad),self.minLoad)
-		utilization_set_point = avg_utilization*np.ones(self.numCores)
+		if self.jainIndex(utilization) < 0.999:
+			utilization_set_point = avg_utilization*np.ones(self.numCores)
+		else:
+			utilization_set_point = 1.1*avg_utilization*np.ones(self.numCores)
 
 		# resetting the average load
 		self.avgLoad = np.zeros(self.numCores)
@@ -111,7 +114,6 @@ class MigrationManager:
 		index = random.choice(indices)
 		return index
 
-
 	def ewma(self,vec,y,alpha=0.05):
 		res = alpha*vec + (1-alpha)*y
 		return res
@@ -121,6 +123,15 @@ class MigrationManager:
 			return y
 		else:
 			res = (vec * n + y)/(n+1)
+
+	def jainIndex(self,x):
+		n = len(x);
+		squared_sum = np.sum(x)**2
+		sum_squared = np.sum(x**2)
+		if sum_squared > 0:
+			return squared_sum/(n*sum_squared);
+		else:
+			return 1./n
 
 	def getTotalMigrations(self):
 		return self.total_migrations
