@@ -19,9 +19,10 @@ for i=1:length(folders)
     clear data
     for j = 1:length(files)
         nums = regexp(files{j},'\d+','match');
-        numCores   = str2num(nums{1});
-        numThreads = str2num(nums{2});
-        relocationThreshold = str2num([nums{3} '.' nums{4}]);
+        numCores   = str2double(nums{1});
+        numThreads = str2double(nums{2});
+        padding = str2double([nums{3} '.' nums{4}]);
+        relocationThreshold = str2double([nums{4} '.' nums{5}]);
         clear D
         fprintf('%d/%d: %s%s\n',j,length(files),folders{i},files{j});
         D = importdata([folders{i} files{j}],delimiterIn,headerlinesIn);
