@@ -40,14 +40,45 @@ for i=1:numExperiments
 end
 
 %% Plotting results
-[nCores,Thresh] = meshgrid(nC,th);
-figure(1); hold on;
 colormap jet
 cm = colormap;
+
+[nCores,Thresh] = meshgrid(nC,th);
+figure(1); hold on;
 for i=1:length(nT)
     hSurface = surf(nCores,Thresh,...
         reshape(simple_migrations(:,i,:),[length(nC),length(th)])');
     set(hSurface,'FaceColor',cm(10*i,:),'FaceAlpha',0.5);
 end
 hold off;
+title('Simple');
+xlabel('cores');
+ylabel('thresholds');
+zlabel('migrations')
+view(3);
+
+figure(2); hold on;
+for i=1:length(nT)
+    hSurface = surf(nCores,Thresh,...
+        reshape(load_aware_migrations(:,i,:),[length(nC),length(th)])');
+    set(hSurface,'FaceColor',cm(10*i,:),'FaceAlpha',0.5);
+end
+hold off;
+title('Load aware');
+xlabel('cores');
+ylabel('thresholds');
+zlabel('migrations')
+view(3);
+
+figure(3); hold on;
+for i=1:length(nT)
+    hSurface = surf(nCores,Thresh,...
+        reshape(load_normalized_migrations(:,i,:),[length(nC),length(th)])');
+    set(hSurface,'FaceColor',cm(10*i,:),'FaceAlpha',0.5);
+end
+hold off;
+title('Load normalized');
+xlabel('cores');
+ylabel('thresholds');
+zlabel('migrations')
 view(3);

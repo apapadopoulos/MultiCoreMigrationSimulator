@@ -22,6 +22,8 @@ class MigrationManager:
 		self.minLoad = minLoad
 		self.maxLoad = maxLoad
 		self.verb    = verb
+		self.avgLoad = np.zeros(self.numCores)
+		self.numSamp = 0
 
 		# Update overload index parameters
 		self.K       = 1e-6
@@ -38,12 +40,28 @@ class MigrationManager:
 
 		return placement_matrix
 
+	def average_load(self,schedulerList,method=1):
+		utilization   = np.array([schedulerList[i].getUtilization() for i in xrange(0,self.numCores)])
+		if method == 0:
+			self.avgLoad = self.ma(self.avgLoadutilization,self.numSamp)
+		elif method==1:
+			self.avgLoad = self.ewma(self.avgLoad,utilization)
+		else:
+			self.avgLoad = utilization
+
+		self.numSamp += 1
+
 	def normalize_load(self, schedulerList):
 		## Normalize the load with respect to the actual utilization
-		utilization = np.array([schedulerList[i].getUtilization()\
-			                      for i in xrange(0,self.numCores)])
-		avg_utilization = max(min(np.sum(utilization)/self.numCores,self.maxLoad),self.minLoad)
-		utilization_set_point = self.padding*avg_utilization*np.ones(self.numCores)
+		# utilization = np.array([schedulerList[i].getUtilization()\
+		# 	                      for i in xrange(0,self.numCores)])
+		utilization = self.avgLoad
+		avg_utilization = max(min(self.padding*np.sum(utilization)/self.numCores,self.maxLoad),self.minLoad)
+		utilization_set_point = avg_utilization*np.ones(self.numCores)
+
+		# resetting the average load
+		self.avgLoad = np.zeros(self.numCores)
+		self.numSamp = 0
 		return utilization_set_point
 
 	def updatedOverloadIndex(self, schedulerList, utilization_set_point):
@@ -92,6 +110,17 @@ class MigrationManager:
 		indices = self.argMinSet(vec)
 		index = random.choice(indices)
 		return index
+
+
+	def ewma(self,vec,y,alpha=0.05):
+		res = alpha*vec + (1-alpha)*y
+		return res
+
+	def ma(self,vec,y,n):
+		if n <= 0:
+			return y
+		else:
+			res = (vec * n + y)/(n+1)
 
 	def getTotalMigrations(self):
 		return self.total_migrations
@@ -174,7 +203,7 @@ class MigrationManager:
 				                         if placement_matrix[i,migration_source]==1]
 				
 				# computing the spare capacity the underloaded cores
-				spare_capacity = [utilization_set_point[i]-schedulerList[i].getUtilization()\
+				spare_capacity = [utilization_set_point[i]-schedulerList[i].getNominalUtilization()\
 				                                   for i in indexes_false]
 
 				# constructing the matrix of all the possible migrations

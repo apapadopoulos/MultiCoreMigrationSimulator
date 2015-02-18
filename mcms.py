@@ -55,8 +55,8 @@ def main():
 
 	parser.add_argument('--utilizationSetPoint',
 		type = float,
-		help = 'Relocation threashold.',
-		default = 0.55)
+		help = 'Utilization setpoint.',
+		default = 0.5)
 	
 	parser.add_argument('--relocationThreshold',
 		type = float,
@@ -71,7 +71,7 @@ def main():
 	parser.add_argument('--padding',
 		type = float,
 		help = 'Padding for the adaptation of the set point (Valid only with load_normalized!).',
-		default = 1.1)
+		default = 1.0)
 
 	parser.add_argument('--plot',
 		type = int,
@@ -171,6 +171,8 @@ def main():
 			# If DeltaSP is elapsed, update the utilization set point
 			if np.mod(kk,DeltaSP)==0:
 				utilizationSetPoint = mm.normalize_load(Schedulers)
+			else:
+				mm.average_load(Schedulers)
 			placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
 
 		# Saving the utilization setpoint
@@ -214,6 +216,7 @@ def main():
 								   +migration+'_'\
 			 					   +'numCores'+str(numCores)+'_'\
 								   +'numThreads'+str(numThreads)+'_'\
+								   +'padding'+str(args.padding)+'_'\
 								   +'relocationThreshold'+str(args.relocationThreshold)\
 								   +'.csv', M, header=header)
 
