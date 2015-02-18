@@ -73,6 +73,11 @@ def main():
 		help = 'Padding for the adaptation of the set point (Valid only with load_normalized!).',
 		default = 1.0)
 
+	parser.add_argument('--startupTime',
+		type = int,
+		help = 'Time needed for the system to startup.',
+		default = 0)
+
 	parser.add_argument('--plot',
 		type = int,
 		help = 'Option to show graphs or not.',
@@ -169,18 +174,19 @@ def main():
 
 		vOI[kk-1,:] = mm.getOverloadIndex()
 
-		# Apply migration algorithm
-		if migration=='simple':
-			placement_matrix = mm.migration_simple(Schedulers, placement_matrix,utilizationSetPoint)
-		elif migration=='load_aware':
-			placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
-		elif migration=='load_normalized':
-			# If DeltaSP is elapsed, update the utilization set point
-			if np.mod(kk,DeltaSP)==0:
-				utilizationSetPoint = mm.normalize_load(Schedulers)
-			else:
-				mm.average_load(Schedulers)
-			placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
+		if kk > args.startupTime:
+			# Apply migration algorithm
+			if migration=='simple':
+				placement_matrix = mm.migration_simple(Schedulers, placement_matrix,utilizationSetPoint)
+			elif migration=='load_aware':
+				placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
+			elif migration=='load_normalized':
+				# If DeltaSP is elapsed, update the utilization set point
+				if np.mod(kk,DeltaSP)==0:
+					utilizationSetPoint = mm.normalize_load(Schedulers)
+				else:
+					mm.average_load(Schedulers)
+				placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
 
 		# Saving the utilization setpoint
 		vSP[kk-1,:] = utilizationSetPoint
