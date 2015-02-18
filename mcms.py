@@ -144,7 +144,14 @@ def main():
 	vOI = np.zeros((tFin,numCores))
 
 	## Starting the simulation
-	print '[%s] started with numCores=%d, numThreads=%d, tFin=%d...'%(args.migration,args.numCores,args.numThreads,args.simTime)
+	print '[%s] started with:\n\tnumCores=%d,\n\tnumThreads=%d,\n\tpadding=%f,\n\trelocationThreshold=%f,\n\ttFin=%d...'%\
+	            (args.migration,\
+				 args.numCores,\
+				 args.numThreads,\
+				 args.padding,\
+	             args.relocationThreshold,\
+				 args.simTime)
+
 	for kk in xrange(1,tFin+1):
 		if args.verb:
 			ut.progress(kk,tFin, bar_length=20)
@@ -181,7 +188,13 @@ def main():
 	if args.verb:
 		print '\nSimulation finished!\n'
 		mm.viewTotalMigrations()
-	print '[%s] simulation with numCores=%d, numThreads=%d, tFin=%d: finished!'%(args.migration,args.numCores,args.numThreads,args.simTime)
+	print '[%s] finished sim with:\n\tnumCores=%d,\n\tnumThreads=%d,\n\tpadding=%f,\n\trelocationThreshold=%f,\n\ttFin=%d...'%\
+	          (args.migration,\
+			   args.numCores,\
+			   args.numThreads,\
+			   args.padding,\
+			   args.relocationThreshold,\
+			   args.simTime)
 
 	if args.plot:
 		plt.figure(1)
