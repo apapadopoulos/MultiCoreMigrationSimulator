@@ -7,13 +7,13 @@ algs=( simple load_aware load_normalized )
 
 for algorithm in "${algs[@]}"
 do
-	for nT in 100 250 500 1000
+	for nT in 100 128 250 256 500 512 1000 1024 2000 2048
 	do
-		for pad in 1.0 1.1 1.2 1.5
+		for pad in 1.0
 		do
-			for rT in 0.5 1.0
+			for rT in 0.5
 			do
-				for cc in 2 4 8 16 32 64 128
+				for cc in 2 4 8 16 32 64 128 256
 				do
 				    mkdir -p results/${algorithm}
 				    ./mcms.py --migration ${algorithm} \
@@ -25,12 +25,12 @@ do
 				              --simTime 1500 \
 				              --deltaSP 20 \
 				              --startupTime 0\
+				              --scenario 0\
 				              $@ &
 				done
 			done
 		done
-		wait
 	done
 done
-
+wait
 
