@@ -59,7 +59,7 @@ class PI(Controller):
 	   R(z) = Kp + Ki/(z-1)
 	"""
 
-	def __init__(self, ident, Kp, Ki,uMin=None,uMax=None):
+	def __init__(self, ident, Kp, Ki,uMin=np.nan,uMax=np.nan):
 		self.id   = ident
 		self.Kp   = Kp
 		self.Ki   = Ki
@@ -79,7 +79,9 @@ class PI(Controller):
 
 	def limit(self,u):
 		# Apply saturations
-		return np.max(np.min(u,self.uMax),self.uMin)
+		v = np.nanmin([u,self.uMax])
+		v = np.nanmax([v,self.uMin])
+		return v
 
 	def computeU(self,yo,y):
 		self.yo = yo;
@@ -109,7 +111,7 @@ class I(PI):
 	   R(z) = Ki/(z-1)
 	"""
 
-	def __init__(self, ident, Ki,uMin=None,uMax=None):
+	def __init__(self, ident, Ki,uMin=np.nan,uMax=np.nan):
 		self.id   = ident
 		self.Kp   = 0
 		self.Ki   = Ki

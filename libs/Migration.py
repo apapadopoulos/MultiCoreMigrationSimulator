@@ -43,7 +43,7 @@ class MigrationManager:
 	def average_load(self,schedulerList,method=1):
 		utilization   = np.array([schedulerList[i].getUtilization() for i in xrange(0,self.numCores)])
 		if method == 0:
-			self.avgLoad = self.ma(self.avgLoadutilization,self.numSamp)
+			self.avgLoad = self.ma(self.avgLoad,utilization,self.numSamp)
 		elif method==1:
 			self.avgLoad = self.ewma(self.avgLoad,utilization)
 		else:
@@ -107,6 +107,20 @@ class MigrationManager:
 		index = random.choice(indices)
 		return index
 
+	def argMaxFirst(self, vec):
+		# Find the index with maximum value. If there is more than one
+		# the first one is chosen
+		indices = self.argMaxSet(vec)
+		index = indices[0]
+		return index
+
+	def argMaxLast(self, vec):
+		# Find the index with maximum value. If there is more than one
+		# the first one is chosen
+		indices = self.argMaxSet(vec)
+		index = indices[-1]
+		return index
+
 	def argMinRand(self, vec):
 		# Find the index with maximum value. If there is more than one
 		# a random index is chosen
@@ -122,7 +136,7 @@ class MigrationManager:
 		if n <= 0:
 			return y
 		else:
-			res = (vec * n + y)/(n+1)
+			return (vec * n + y)/(n+1)
 
 	def jainIndex(self,x):
 		n = len(x);
@@ -205,7 +219,7 @@ class MigrationManager:
 
 			# migrate the core with a larger value of the overload index
 			# if there are more than one with the same overload index, pick one at random
-			migration_source = self.argMaxRand(self.integrated_overload_index)
+			migration_source = self.argMaxLast(self.integrated_overload_index)
 
 			if len(indexes_false) > 0: # if there are any underloaded cores
 				# finding the threads running on the migration_source core
@@ -217,18 +231,31 @@ class MigrationManager:
 				spare_capacity = [utilization_set_point[i]-schedulerList[i].getNominalUtilization()\
 				                                   for i in indexes_false]
 
-				# constructing the matrix of all the possible migrations
-				possible_couples    = [(i,alphas[i],j) for i in index_threads for j in indexes_false]
-				possible_migrations = [j - alphas[i] for i in index_threads\
-				                                     for j in spare_capacity]
+				# Selecting the core with the highest spare capacity
+				idx_spare = self.argMaxRand(spare_capacity)
+				migration_destination = indexes_false[idx_spare]
 
-				# Identifying which is the best migration
-				indices_possible_migrations = self.argMinSet(possible_migrations)
-				alphas_migration_list = [possible_couples[i][1] for i in indices_possible_migrations]
-				idx_migration = self.argMaxRand(alphas_migration_list)
+				# looking for the thread with the highest alpha fitting the selected spare capacity
+				possible_alphas = [alphas[i] for i in index_threads]
+				idx_thread = self.argMaxRand(possible_alphas)
+				migration_selected = index_threads[idx_thread]
 
-				#print idx_migration
-				migration_selected,temp,migration_destination = possible_couples[idx_migration]
+				# # constructing the matrix of all the possible migrations
+				# possible_couples    = [(i,alphas[i],j) for i in index_threads\
+				# 									   for j in indexes_false]
+
+				# possible_migrations = [j - alphas[i] for i in index_threads\
+				#                                           for j in spare_capacity]
+
+				# possible_migrations = np.array(possible_migrations)
+				# possible_migrations[np.nonzero(possible_migrations < 0)] = 100.0
+				# # Identifying which is the best migration
+				# indices_possible_migrations = self.argMinSet(possible_migrations)
+				# alphas_migration_list = [possible_couples[i][1] for i in indices_possible_migrations]
+				# idx_migration = self.argMaxFirst(alphas_migration_list)
+
+				# #print idx_migration
+				# migration_selected,temp,migration_destination = possible_couples[idx_migration]
 
 				# migrating the process on the placement_matrix
 				placement_matrix = self.migrate(placement_matrix,\

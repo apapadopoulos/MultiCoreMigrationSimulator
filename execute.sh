@@ -9,7 +9,7 @@ for algorithm in "${algs[@]}"
 do
 	for nT in 100 250 500 1000
 	do
-		for pad in 1.0 1.05 1.1 1.2 1.5
+		for pad in 1.0 1.1 1.2 1.5
 		do
 			for rT in 0.5 1.0
 			do

@@ -20,12 +20,12 @@ class Scheduler(object):
 class IplusPI(Scheduler):
 	"""docstring for IplusPI"""
 
-	def __init__(self, ident, Kiin=0.25, Kpout=1.4, Kiout=0.168, verb=False):
+	def __init__(self, ident, Kiin=0.25, Kpout=1.4, Kiout=0.168, verb=False,uMino=-1, uMaxo=1):
 		self.id = ident
 		self.verb = verb
 		self.InnerControllers = []
 		self.numReg = 0
-		self.outerController = ctrl.PI(ident=self.id,Kp = Kpout, Ki = Kiout)
+		self.outerController = ctrl.PI(ident=self.id,Kp = Kpout, Ki = Kiout, uMin = uMino, uMax = uMaxo)
 
 		# Signals
 		self.tauto  = np.zeros(self.numReg)

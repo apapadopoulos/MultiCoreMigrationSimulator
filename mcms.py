@@ -93,6 +93,13 @@ def main():
 		help = 'Options to have a verbose execution.',
 		default = 0)
 
+	parser.add_argument('--scenario',
+		type = int,
+		help = 'Different initial conditions. 0: First core overloaded,\
+		                                      1: Threads spreaded among the cores,\
+		                                      2: Threads spreaded among the cores, but last empty.',
+		default = 0)
+
 	# Parsing the command line inputs
 	args = parser.parse_args()
 
@@ -137,8 +144,26 @@ def main():
 	mm = mig.MigrationManager(numCores, relocationThresholds, minLoad=0.1, padding=args.padding, verb=False)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
-	# The threads start all on the first core
-	placement_matrix[:,0] = 1;
+	
+	if args.scenario == 0:
+		## The threads start all on the first core
+		placement_matrix[:,0] = 1;
+	elif args.scenario == 1:
+		## The threads are equally spread among the cores
+		threadPerCore = np.ceil((1.*numThreads)/numCores)
+		for cc in xrange(0,numCores-1):
+			placement_matrix[cc*threadPerCore:(cc+1)*threadPerCore,cc] = 1
+		else:
+			placement_matrix[(numCores-1)*threadPerCore:,numCores-1] = 1
+	elif args.scenario == 2:
+		## The threads are equally spread among the cores. The last core is empty.
+		threadPerCore = np.ceil((1.*numThreads)/numCores)
+		for cc in xrange(0,numCores-1):
+			placement_matrix[cc*threadPerCore:(cc+1)*threadPerCore,cc] = 1
+		else:
+			placement_matrix[(numCores-2)*threadPerCore:,numCores-2] = 1
+	else:
+		placement_matrix
 
 
 	vkk = np.zeros((tFin,1))
@@ -185,7 +210,7 @@ def main():
 				if np.mod(kk,DeltaSP)==0:
 					utilizationSetPoint = mm.normalize_load(Schedulers)
 				else:
-					mm.average_load(Schedulers)
+					mm.average_load(Schedulers,method=1)
 				placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
 
 		# Saving the utilization setpoint
@@ -207,14 +232,26 @@ def main():
 		plt.plot(xrange(0,tFin),vU)
 		plt.legend(['Core'+str(i) for i in xrange(0,numCores)])
 		plt.plot(xrange(0,tFin),vSP,'--')
+		plt.ylim((0,1.2))
+		plt.title('Actual utilization')
+		plt.xlabel('Scheduling rounds')
+		plt.ylabel('Utilization [Perc.]')
 
 		plt.figure(2)
 		plt.plot(xrange(0,tFin),vUn)
 		plt.plot(xrange(0,tFin),vSP,'--')
+		plt.ylim((0,1.2))
+		plt.title('Nominal utilization')
+		plt.xlabel('Scheduling rounds')
+		plt.ylabel('Utilization [Perc.]')
 
 		plt.figure(3)
 		plt.plot(xrange(0,tFin),vOI)
 		plt.plot(xrange(0,tFin),args.relocationThreshold*np.ones(tFin),'k--')
+		plt.ylim((0,args.relocationThreshold*1.5))
+		plt.title('Overload index')
+		plt.xlabel('Scheduling rounds')
+		plt.ylabel('Overload index')
 		plt.show()
 
 	if args.save:
