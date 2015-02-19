@@ -7,7 +7,7 @@ algs=( simple load_aware load_normalized )
 
 for algorithm in "${algs[@]}"
 do
-	for nT in 100 128 250 256 500 512 1000 1024 2000 2048
+	for nT in 100 128 250 256 500 512 1000 1024
 	do
 		for pad in 1.0
 		do

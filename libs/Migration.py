@@ -25,14 +25,17 @@ class MigrationManager:
 		self.verb    = verb
 		self.avgLoad = np.zeros(self.numCores)
 		self.avgNominalLoadOld = 0
+		self.maxNominalLoadOld = 0
 		self.count   = 0
+		self.countJ  = 0
+		self.times   = 5
 		self.tol     = 1e-3
 		self.numSamp = 0
 		self.keepUpdating = True
 
 
 		# Update overload index parameters
-		self.K       = 0#1e-6
+		self.K       = 1e-6
 		self.u       = 0
 
 	def migrate(self, placement_matrix, thread,source,dest):
@@ -61,32 +64,24 @@ class MigrationManager:
 		## Normalize the load with respect to the actual utilization
 		nominalUtilizations = np.array([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
 		maxNominal = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)
-		if self.keepUpdating == True:
-			utilization = self.avgLoad
-			avg_utilization = max(min(self.padding*np.mean(utilization),self.maxLoad),self.minLoad)
-			if ut.jainIndex(utilization) < 0.999:
-				utilization_set_point = avg_utilization*np.ones(self.numCores)
-			else:
-				utilization_set_point = maxNominal*np.ones(self.numCores)
+		avgNominalLoad = max(min(np.mean(nominalUtilizations),self.maxLoad),self.minLoad)
 
-		avgNominalLoad = np.mean(nominalUtilizations)
-		if avgNominalLoad - self.avgNominalLoadOld < self.tol:
-			if self.keepUpdating:
-				self.count += 1
-				if self.count > 1:
-					self.count = 0
-					self.keepUpdating = False
-					utilization_set_point = maxNominal*np.ones(self.numCores)
-			else:
-				utilization_set_point = maxNominal*np.ones(self.numCores)
+		utilization = self.avgLoad
+		avg_utilization = max(min(self.padding*np.mean(utilization),self.maxLoad),self.minLoad)
+
+		if maxNominal - self.maxNominalLoadOld < 0:
+			utilization_set_point = avgNominalLoad * np.ones(self.numCores)
 		else:
-			self.count -= 1
-			utilization_set_point = maxNominal*np.ones(self.numCores)
-			if self.count < -1:
-				self.keepUpdating = True
-				self.count =0
+			if maxNominal - self.maxNominalLoadOld == 0 and self.count <= self.times:
+				# try to decrease it a bit more
+				utilization_set_point = avgNominalLoad * np.ones(self.numCores)
+				if maxNominal != avgNominalLoad:
+					self.count += 1
+					utilization_set_point = (maxNominal + avgNominalLoad)/2.0 * np.ones(self.numCores)
+			else:
+				utilization_set_point = maxNominal * np.ones(self.numCores)
 
-		self.avgNominalLoadOld = avgNominalLoad
+		self.maxNominalLoadOld = maxNominal
 
 		# resetting the average load
 		self.avgLoad = np.zeros(self.numCores)
