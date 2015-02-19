@@ -31,7 +31,7 @@ class MigrationManager:
 
 
 		# Update overload index parameters
-		self.K       = 1e-6
+		self.K       = 0#1e-6
 		self.u       = 0
 
 	def migrate(self, placement_matrix, thread,source,dest):
@@ -46,7 +46,7 @@ class MigrationManager:
 		return placement_matrix
 
 	def average_load(self,schedulerList,method=1):
-		utilization   = np.array([schedulerList[i].getUtilization() for i in xrange(0,self.numCores)])
+		utilization   = np.array([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
 		if method == 0:
 			self.avgLoad = self.ma(self.avgLoad,utilization,self.numSamp)
 		elif method==1:
@@ -58,9 +58,6 @@ class MigrationManager:
 
 	def normalize_load(self, schedulerList):
 		## Normalize the load with respect to the actual utilization
-		# utilization = np.array([schedulerList[i].getUtilization()\
-		# 	                      for i in xrange(0,self.numCores)])
-		#utilization_set_point = np.ones(self.numCores)
 		if self.keepUpdating == True:
 			utilization = self.avgLoad
 			avg_utilization = max(min(self.padding*np.mean(utilization),self.maxLoad),self.minLoad)
@@ -74,16 +71,16 @@ class MigrationManager:
 		if np.mean(avgNominalLoad) - np.mean(self.avgLoadOld) < self.tol:
 			if self.keepUpdating:
 				self.count += 1
-				if self.count > 5:
+				if self.count > 1:
 					self.count = 0
 					self.keepUpdating = False
-					utilization_set_point = max(min(1.1*np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
+					utilization_set_point = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
 			else:
-				utilization_set_point = max(min(1.1*np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
+				utilization_set_point = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
 		else:
 			self.count -= 1
-			utilization_set_point = max(min(1.1*np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
-			if self.count < -5:
+			utilization_set_point = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
+			if self.count < -1:
 				self.keepUpdating = True
 				self.count =0
 
@@ -267,23 +264,6 @@ class MigrationManager:
 				idx_thread = self.argMaxRand(possible_alphas)
 				migration_selected = index_threads[idx_thread]
 
-				# # constructing the matrix of all the possible migrations
-				# possible_couples    = [(i,alphas[i],j) for i in index_threads\
-				# 									   for j in indexes_false]
-
-				# possible_migrations = [j - alphas[i] for i in index_threads\
-				#                                           for j in spare_capacity]
-
-				# possible_migrations = np.array(possible_migrations)
-				# possible_migrations[np.nonzero(possible_migrations < 0)] = 100.0
-				# # Identifying which is the best migration
-				# indices_possible_migrations = self.argMinSet(possible_migrations)
-				# alphas_migration_list = [possible_couples[i][1] for i in indices_possible_migrations]
-				# idx_migration = self.argMaxFirst(alphas_migration_list)
-
-				# #print idx_migration
-				# migration_selected,temp,migration_destination = possible_couples[idx_migration]
-
 				# migrating the process on the placement_matrix
 				placement_matrix = self.migrate(placement_matrix,\
 					                            migration_selected,\
@@ -301,3 +281,66 @@ class MigrationManager:
 
 		return placement_matrix
 
+	def migration_load_aware_other(self, schedulerList, placement_matrix, utilization_set_point, alphas):
+		# initialization
+		migration_selected = -1
+		migration_source = -1
+		migration_destination = -1
+
+		# update the integrated overload index for all the cores
+		self.updatedOverloadIndex(schedulerList,utilization_set_point)
+
+		migrate_me_maybe = self.integrated_overload_index > self.relocation_thresholds
+		if np.any(migrate_me_maybe) == True: # If there is any overloaded core
+			# find the indices of overloaded cores
+			indexes_true  = [i for i in xrange(0,self.numCores) if migrate_me_maybe[i] == True]
+			# find the indices of not overloaded cores
+			indexes_false = [i for i in xrange(0,self.numCores) if migrate_me_maybe[i] == False]
+
+			# migrate the core with a larger value of the overload index
+			# if there are more than one with the same overload index, pick one at random
+			migration_source = self.argMaxLast(self.integrated_overload_index)
+
+			if len(indexes_false) > 0: # if there are any underloaded cores
+				# finding the threads running on the migration_source core
+				numTotThreads = len(placement_matrix[:,migration_source])
+				index_threads = [i for i in xrange(0,numTotThreads)\
+				                         if placement_matrix[i,migration_source]==1]
+				
+				# computing the spare capacity the underloaded cores
+				spare_capacity = [utilization_set_point[i]-schedulerList[i].getNominalUtilization()\
+				                                   for i in indexes_false]
+
+				# constructing the matrix of all the possible migrations
+				possible_couples    = [(i,alphas[i],j) for i in index_threads\
+													   for j in indexes_false]
+
+				possible_migrations = [j - alphas[i] for i in index_threads\
+				                                          for j in spare_capacity]
+
+				possible_migrations = np.array(possible_migrations)
+				possible_migrations[np.nonzero(possible_migrations < 0)] = 100.0
+				# Identifying which is the best migration
+				indices_possible_migrations = self.argMinSet(possible_migrations)
+				alphas_migration_list = [possible_couples[i][1] for i in indices_possible_migrations]
+				idx_migration = self.argMaxFirst(alphas_migration_list)
+
+				#print idx_migration
+				migration_selected,temp,migration_destination = possible_couples[idx_migration]
+
+				# migrating the process on the placement_matrix
+				placement_matrix = self.migrate(placement_matrix,\
+					                            migration_selected,\
+					                            migration_source,\
+					                            migration_destination)
+
+				if self.verb:
+					print '[LOAD_AWARE] Migrating process%d from Core%d to Core'%\
+					                (migration_selected,migration_source,migration_destination)
+			else:
+				# no cores are underloaded
+				# Reset all the overload indices
+				self.integrated_overload_index[:] = 0
+				migration_destination = migration_source
+
+		return placement_matrix
