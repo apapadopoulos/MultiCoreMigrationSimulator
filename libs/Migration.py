@@ -24,7 +24,7 @@ class MigrationManager:
 		self.maxLoad = maxLoad
 		self.verb    = verb
 		self.avgLoad = np.zeros(self.numCores)
-		self.avgLoadOld = np.zeros(self.numCores)
+		self.avgNominalLoadOld = 0
 		self.count   = 0
 		self.tol     = 1e-3
 		self.numSamp = 0
@@ -59,33 +59,34 @@ class MigrationManager:
 
 	def normalize_load(self, schedulerList):
 		## Normalize the load with respect to the actual utilization
+		nominalUtilizations = np.array([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
+		maxNominal = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)
 		if self.keepUpdating == True:
 			utilization = self.avgLoad
 			avg_utilization = max(min(self.padding*np.mean(utilization),self.maxLoad),self.minLoad)
 			if ut.jainIndex(utilization) < 0.999:
 				utilization_set_point = avg_utilization*np.ones(self.numCores)
 			else:
-				utilization_set_point = 1.1*avg_utilization*np.ones(self.numCores)
+				utilization_set_point = maxNominal*np.ones(self.numCores)
 
-		nominalUtilizations = np.array([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
 		avgNominalLoad = np.mean(nominalUtilizations)
-		if np.mean(avgNominalLoad) - np.mean(self.avgLoadOld) < self.tol:
+		if avgNominalLoad - self.avgNominalLoadOld < self.tol:
 			if self.keepUpdating:
 				self.count += 1
 				if self.count > 1:
 					self.count = 0
 					self.keepUpdating = False
-					utilization_set_point = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
+					utilization_set_point = maxNominal*np.ones(self.numCores)
 			else:
-				utilization_set_point = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
+				utilization_set_point = maxNominal*np.ones(self.numCores)
 		else:
 			self.count -= 1
-			utilization_set_point = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)*np.ones(self.numCores)
+			utilization_set_point = maxNominal*np.ones(self.numCores)
 			if self.count < -1:
 				self.keepUpdating = True
 				self.count =0
 
-		self.avgLoadOld = avgNominalLoad
+		self.avgNominalLoadOld = avgNominalLoad
 
 		# resetting the average load
 		self.avgLoad = np.zeros(self.numCores)
