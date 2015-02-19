@@ -20,7 +20,7 @@ class Scheduler(object):
 class IplusPI(Scheduler):
 	"""docstring for IplusPI"""
 
-	def __init__(self, ident, Kiin=0.25, Kpout=1.4, Kiout=0.168, verb=False,uMino=-1, uMaxo=1):
+	def __init__(self, ident, Kiin=0.25, Kpout=1.4, Kiout=0.168, verb=False, uMino=np.nan, uMaxo=np.nan):
 		self.id = ident
 		self.verb = verb
 		self.InnerControllers = []
@@ -40,10 +40,6 @@ class IplusPI(Scheduler):
 		self.Kiin   = Kiin
 		self.Kpout  = Kpout
 		self.Kiout  = Kiout
-
-		# if self.numReg > 0:
-		# 	for i in xrange(0,self.numReg):
-		# 		self.InnerControllers.append(ctrl.I(name='InnerController'+str(i), Ki = Kiin, uMin=0))
 
 	def schedule(self,processList,tauro):
 		self.tauro = tauro
@@ -95,8 +91,11 @@ class IplusPI(Scheduler):
 			b = self.InnerControllers[idxReg].computeU(self.tauto[idxReg],self.tauts[idxReg])
 			processList[i].setU(b)
 
-
-		self.alphasEff = self.tauts/self.taur
+		# Computing the effective alphas
+		if self.taur > 0:
+			self.alphasEff = self.tauts/self.taur
+		else:
+			self.alphasEff = self.tauts/self.tauro
 
 
 		return np.sum(self.tauts), self.tauts, self.tauto

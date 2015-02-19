@@ -133,7 +133,7 @@ def main():
 	Schedulers = []
 	tauro      = np.zeros(numCores)
 	for i in xrange(0,numCores):
-		Schedulers.append(sched.IplusPI(ident=i, Kiin=0.25, Kpout=0.5, Kiout=0.1))
+		Schedulers.append(sched.IplusPI(ident=i, Kiin=0.25, Kpout=2.0, Kiout=0.25))
 		tauro[i] = 1
 
 	## Creating a migration manager

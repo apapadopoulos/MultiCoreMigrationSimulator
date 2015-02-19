@@ -79,9 +79,7 @@ class PI(Controller):
 
 	def limit(self,u):
 		# Apply saturations
-		v = np.nanmin([u,self.uMax])
-		v = np.nanmax([v,self.uMin])
-		return v
+		return np.nanmax([np.nanmin([u,self.uMax]),self.uMin])
 
 	def computeU(self,yo,y):
 		self.yo = yo;

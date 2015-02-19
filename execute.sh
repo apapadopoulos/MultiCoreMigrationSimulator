@@ -28,9 +28,10 @@ do
 				              --scenario 0\
 				              $@ &
 				done
+				wait
 			done
 		done
 	done
 done
-wait
+
 
