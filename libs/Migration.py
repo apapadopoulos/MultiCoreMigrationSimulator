@@ -111,6 +111,10 @@ class MigrationManager:
 		migration_source = -1
 		migration_destination = -1
 
+		# updating the migrationPerThread count
+		if len(placement_matrix[:,0]) != len(self.migrationPerThread):
+			self.migrationPerThread = np.zeros(len(placement_matrix[:,0]))
+
 		# check the number ot threads
 		nT = np.size(placement_matrix,0)
 		nC = np.size(placement_matrix,1)
