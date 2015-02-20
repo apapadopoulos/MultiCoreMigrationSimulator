@@ -128,6 +128,15 @@ class MigrationManager:
 		migration_source = -1
 		migration_destination = -1
 
+		# check the number ot threads
+		nT = np.size(placement_matrix,0)
+		nC = np.size(placement_matrix,1)
+		if nT <= nC:
+			pm = np.zeros((nT,nC))
+			for i in xrange(0,nT):
+				pm[i,i] = 1
+			return pm
+
 		# update the integrated overload index for all the cores
 		self.updatedOverloadIndex(schedulerList,utilization_set_point)
 
@@ -171,6 +180,16 @@ class MigrationManager:
 
 		# update the integrated overload index for all the cores
 		self.updatedOverloadIndex(schedulerList,utilization_set_point)
+
+		# check the number ot threads
+		nT = np.size(placement_matrix,0)
+		nC = np.size(placement_matrix,1)
+		if nT <= nC:
+			pm = np.zeros((nT,nC))
+			for i in xrange(0,nT):
+				pm[i,i] = 1
+			return pm
+
 
 		migrate_me_maybe = self.integrated_overload_index > self.relocation_thresholds
 		if np.any(migrate_me_maybe) == True: # If there is any overloaded core
