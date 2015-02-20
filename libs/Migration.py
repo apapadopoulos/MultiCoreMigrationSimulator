@@ -24,15 +24,9 @@ class MigrationManager:
 		self.maxLoad = maxLoad
 		self.verb    = verb
 		self.avgLoad = np.zeros(self.numCores)
-		self.avgNominalLoadOld = 0
-		self.maxNominalLoadOld = 0
-		self.count   = 0
-		self.countJ  = 0
-		self.times   = 5
-		self.tol     = 1e-3
 		self.numSamp = 0
 		self.keepUpdating = True
-
+		self.migrationPerThread = np.array([])
 
 		# Update overload index parameters
 		self.K       = 1e-6
@@ -46,6 +40,7 @@ class MigrationManager:
 		self.total_migrations += 1
 		# resetting the integrated index
 		self.integrated_overload_index[source] = 0
+		self.migrationPerThread[thread] += 1
 
 		return placement_matrix
 
@@ -62,26 +57,14 @@ class MigrationManager:
 
 	def normalize_load(self, schedulerList):
 		## Normalize the load with respect to the actual utilization
-		nominalUtilizations = np.array([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
-		maxNominal = max(min(np.max(nominalUtilizations),self.maxLoad),self.minLoad)
-		avgNominalLoad = max(min(np.mean(nominalUtilizations),self.maxLoad),self.minLoad)
-
 		utilization = self.avgLoad
 		avg_utilization = max(min(self.padding*np.mean(utilization),self.maxLoad),self.minLoad)
+		utilization_set_point = avg_utilization * np.ones(self.numCores)
 
-		if maxNominal - self.maxNominalLoadOld < 0:
-			utilization_set_point = avgNominalLoad * np.ones(self.numCores)
-		else:
-			if maxNominal - self.maxNominalLoadOld == 0 and self.count <= self.times:
-				# try to decrease it a bit more
-				utilization_set_point = avgNominalLoad * np.ones(self.numCores)
-				if maxNominal != avgNominalLoad:
-					self.count += 1
-					utilization_set_point = (maxNominal + avgNominalLoad)/2.0 * np.ones(self.numCores)
-			else:
-				utilization_set_point = maxNominal * np.ones(self.numCores)
-
-		self.maxNominalLoadOld = maxNominal
+		if np.sum(self.migrationPerThread) > len(self.migrationPerThread):
+			max_utilization = np.max([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
+			max_utilization = min(max(max_utilization,self.minLoad),self.maxLoad)
+			utilization_set_point = max_utilization * np.ones(self.numCores)
 
 		# resetting the average load
 		self.avgLoad = np.zeros(self.numCores)
@@ -178,6 +161,10 @@ class MigrationManager:
 		migration_source = -1
 		migration_destination = -1
 
+		# updating the migrationPerThread count
+		if len(placement_matrix[:,0]) != len(self.migrationPerThread):
+			self.migrationPerThread = np.zeros(len(placement_matrix[:,0]))
+
 		# update the integrated overload index for all the cores
 		self.updatedOverloadIndex(schedulerList,utilization_set_point)
 
@@ -218,14 +205,20 @@ class MigrationManager:
 
 				# looking for the thread with the highest alpha fitting the selected spare capacity
 				possible_alphas = [alphas[i] for i in index_threads]
-				idx_thread = ut.argMaxRand(possible_alphas)
-				migration_selected = index_threads[idx_thread]
+				for i in xrange(0,len(possible_alphas)):
+					if self.migrationPerThread[i] >= self.numCores:
+						possible_alphas[i] = 0
 
-				# migrating the process on the placement_matrix
-				placement_matrix = self.migrate(placement_matrix,\
-					                            migration_selected,\
-					                            migration_source,\
-					                            migration_destination)
+				if len(possible_alphas) > 0:
+					idx_thread = ut.argMaxRand(possible_alphas)
+					migration_selected = index_threads[idx_thread]
+
+					if self.migrationPerThread[migration_selected] < self.numCores:
+						# migrating the process on the placement_matrix
+						placement_matrix = self.migrate(placement_matrix,\
+							                            migration_selected,\
+							                            migration_source,\
+							                            migration_destination)
 
 				if self.verb:
 					print '[LOAD_AWARE] Migrating process%d from Core%d to Core'%\
@@ -234,7 +227,6 @@ class MigrationManager:
 				# no cores are underloaded
 				# Reset all the overload indices
 				self.integrated_overload_index[:] = 0
-				migration_destination = migration_source
 
 		return placement_matrix
 

@@ -50,20 +50,22 @@ load_normalized_avg_migrations = mean(load_normalized_migrations);
 
 
 %% Show an example of execution
-exper = 21;
+exper = 64;
 % Simple
 figure(1); clf;
 subplot(311);
 hold on;
   plot(simple.data(exper).time,simple.data(exper).U);
   plot(simple.data(exper).time,simple.data(exper).sp,'k--');
-  ylim([0,1]);
+  ylim([0,1.2]);
+  ylabel('Actual utilization');
 hold off;
 subplot(312);
 hold on;
   plot(simple.data(exper).time,simple.data(exper).Un);
   plot(simple.data(exper).time,simple.data(exper).sp,'k--');
-  ylim([0,10]);
+  ylim([0,1.2]);
+  ylabel('Nominal utilization');
 hold off;
 subplot(313);
 hold on;
@@ -71,7 +73,9 @@ hold on;
   plot(simple.data(exper).time,...
       simple.data(exper).relocationThreshold*ones(length(simple.data(exper).time),1),'k--');
   ylim([0,1]);
+  ylabel('Overload index');
 hold off;
+xlabel('Round [s]');
 
 subplot(311);
 title('Simple');
@@ -82,13 +86,15 @@ subplot(311);
 hold on;
   plot(load_aware.data(exper).time,load_aware.data(exper).U);
   plot(load_aware.data(exper).time,load_aware.data(exper).sp,'k--');
-  ylim([0,1]);
+  ylim([0,1.2]);
+  ylabel('Actual utilization');
 hold off;
 subplot(312);
 hold on;
   plot(load_aware.data(exper).time,load_aware.data(exper).Un);
   plot(load_aware.data(exper).time,load_aware.data(exper).sp,'k--');
-  ylim([0,10]);
+  ylim([0,1.2]);
+  ylabel('Nominal utilization');
 hold off;
 subplot(313);
 hold on;
@@ -96,7 +102,9 @@ hold on;
   plot(load_aware.data(exper).time,...
       load_aware.data(exper).relocationThreshold*ones(length(load_aware.data(exper).time),1),'k--');
   ylim([0,1]);
+  ylabel('Overload index');
 hold off;
+xlabel('Round [s]');
 
 subplot(311);
 title('Load aware');
@@ -107,21 +115,25 @@ subplot(311);
 hold on;
   plot(load_normalized.data(exper).time,load_normalized.data(exper).U);
   plot(load_normalized.data(exper).time,load_normalized.data(exper).sp,'k--');
-  ylim([0,1]);
+  ylim([0,1.2]);
+  ylabel('Actual utilization');
 hold off;
 subplot(312);
 hold on;
   plot(load_normalized.data(exper).time,load_normalized.data(exper).Un);
   plot(load_normalized.data(exper).time,load_normalized.data(exper).sp,'k--');
-  ylim([0,10]);
+  ylim([0,1.2]);
+  ylabel('Nominal utilization');
 hold off;
 subplot(313);
 hold on;
   plot(load_normalized.data(exper).time,load_normalized.data(exper).OI);
   plot(load_normalized.data(exper).time,...
       load_normalized.data(exper).relocationThreshold*ones(length(load_normalized.data(exper).time),1),'k--');
+  ylabel('Overload index');
 hold off;
 ylim([0,1]);
+xlabel('Round [s]');
 
 subplot(311);
 title('Load normalized');
@@ -144,3 +156,7 @@ hold on;
 plot(simple.data(exper).time,load_normalized_fairness(exper,:),'b');
 plot(simple.data(exper).time,load_normalized_fairness_nom(exper,:),'k');
 hold off;
+xlabel('Round [s]');
+
+subplot(311);
+title('Jain index');
