@@ -8,33 +8,27 @@ load_normalized = load('load_normalized_data.mat');
 numExperiments = length(simple.data);
 numCores   = zeros(numExperiments,1);
 numThreads = zeros(numExperiments,1);
-threshold  = zeros(numExperiments,1);
 for i=1:numExperiments
     numCores(i)   = simple.data(i).numCores;
     numThreads(i) = simple.data(i).numThreads;
-    threshold(i)  = simple.data(i).relocationThreshold;
 end
 
 nC = unique(numCores);
 nT = unique(numThreads);
-th = unique(threshold);
 
-simple_migrations = zeros(length(nC),length(nT),length(th));
-load_aware_migrations = zeros(length(nC),length(nT),length(th));
-load_normalized_migrations = zeros(length(nC),length(nT),length(th));
+simple_migrations = zeros(length(nC),length(nT));
+load_aware_migrations = zeros(length(nC),length(nT));
+load_normalized_migrations = zeros(length(nC),length(nT));
 for i=1:numExperiments
     simple_migrations(nC==simple.data(i).numCores,...
-                      nT==simple.data(i).numThreads,...
-                      th==simple.data(i).relocationThreshold)...
+                      nT==simple.data(i).numThreads)...
                       = simple.data(i).totMig(end);
                   
     load_aware_migrations(nC==load_aware.data(i).numCores,...
-                          nT==load_aware.data(i).numThreads,...
-                          th==load_aware.data(i).relocationThreshold)...
+                          nT==load_aware.data(i).numThreads)...
                           = load_aware.data(i).totMig(end);
     load_normalized_migrations(nC==load_normalized.data(i).numCores,...
-                               nT==load_normalized.data(i).numThreads,...
-                               th==load_normalized.data(i).relocationThreshold)...
+                               nT==load_normalized.data(i).numThreads)...
                                = load_normalized.data(i).totMig(end);
     
 end
@@ -43,42 +37,49 @@ end
 colormap jet
 cm = colormap;
 
-[nCores,Thresh] = meshgrid(nC,th);
+[nCores,nThreads] = meshgrid(nC,nT);
 figure(1); hold on;
-for i=1:length(nT)
-    hSurface = surf(nCores,Thresh,...
-        reshape(simple_migrations(:,i,:),[length(nC),length(th)])');
-    set(hSurface,'FaceColor',cm(10*i,:),'FaceAlpha',0.5);
-end
+hSurface = surf(nCores,nThreads,simple_migrations);
+set(hSurface,'FaceColor',cm(1,:),'FaceAlpha',0.5);
 hold off;
 title('Simple');
 xlabel('cores');
-ylabel('thresholds');
+ylabel('threads');
 zlabel('migrations')
 view(3);
 
 figure(2); hold on;
-for i=1:length(nT)
-    hSurface = surf(nCores,Thresh,...
-        reshape(load_aware_migrations(:,i,:),[length(nC),length(th)])');
-    set(hSurface,'FaceColor',cm(10*i,:),'FaceAlpha',0.5);
-end
+hSurface = surf(nCores,nThreads,load_aware_migrations);
+set(hSurface,'FaceColor',cm(10,:),'FaceAlpha',0.5);
 hold off;
-title('Load aware');
+title('Load_aware');
 xlabel('cores');
-ylabel('thresholds');
+ylabel('threads');
 zlabel('migrations')
 view(3);
 
+
 figure(3); hold on;
-for i=1:length(nT)
-    hSurface = surf(nCores,Thresh,...
-        reshape(load_normalized_migrations(:,i,:),[length(nC),length(th)])');
-    set(hSurface,'FaceColor',cm(10*i,:),'FaceAlpha',0.5);
-end
+hSurface = surf(nCores,nThreads,load_normalized_migrations);
+set(hSurface,'FaceColor',cm(20,:),'FaceAlpha',0.5);
 hold off;
 title('Load normalized');
 xlabel('cores');
-ylabel('thresholds');
+ylabel('threads');
+zlabel('migrations')
+view(3);
+
+%% Comparative analysis
+figure(4); hold on;
+hSurface = surf(nCores,nThreads,simple_migrations);
+set(hSurface,'FaceColor',cm(1,:),'FaceAlpha',0.5);
+hSurface = surf(nCores,nThreads,load_aware_migrations);
+set(hSurface,'FaceColor',cm(end/2,:),'FaceAlpha',0.5);
+hSurface = surf(nCores,nThreads,load_normalized_migrations);
+set(hSurface,'FaceColor',cm(end,:),'FaceAlpha',0.5);
+hold off;
+title('Load normalized');
+xlabel('cores');
+ylabel('threads');
 zlabel('migrations')
 view(3);

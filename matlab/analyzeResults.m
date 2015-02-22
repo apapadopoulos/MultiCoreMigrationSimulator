@@ -50,7 +50,7 @@ load_normalized_avg_migrations = mean(load_normalized_migrations);
 
 
 %% Show an example of execution
-exper = 64;
+exper = 11;
 % Simple
 figure(1); clf;
 subplot(311);
