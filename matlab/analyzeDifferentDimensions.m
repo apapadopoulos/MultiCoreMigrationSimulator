@@ -38,7 +38,7 @@ colormap jet
 cm = colormap;
 
 [nCores,nThreads] = meshgrid(nC,nT);
-figure(1); hold on;
+figure(1); clf; hold on;
 hSurface = surf(nCores,nThreads,simple_migrations);
 set(hSurface,'FaceColor',cm(1,:),'FaceAlpha',0.5);
 hold off;
@@ -48,18 +48,18 @@ ylabel('threads');
 zlabel('migrations')
 view(3);
 
-figure(2); hold on;
+figure(2); clf; hold on;
 hSurface = surf(nCores,nThreads,load_aware_migrations);
 set(hSurface,'FaceColor',cm(10,:),'FaceAlpha',0.5);
 hold off;
-title('Load_aware');
+title('Load aware');
 xlabel('cores');
 ylabel('threads');
 zlabel('migrations')
 view(3);
 
 
-figure(3); hold on;
+figure(3); clf; hold on;
 hSurface = surf(nCores,nThreads,load_normalized_migrations);
 set(hSurface,'FaceColor',cm(20,:),'FaceAlpha',0.5);
 hold off;
@@ -70,7 +70,7 @@ zlabel('migrations')
 view(3);
 
 %% Comparative analysis
-figure(4); hold on;
+figure(4); clf;hold on;
 hSurface = surf(nCores,nThreads,simple_migrations);
 set(hSurface,'FaceColor',cm(1,:),'FaceAlpha',0.5);
 hSurface = surf(nCores,nThreads,load_aware_migrations);
@@ -83,3 +83,75 @@ xlabel('cores');
 ylabel('threads');
 zlabel('migrations')
 view(3);
+
+%% Comparative analysis 2
+figure(5); clf;
+subplot(311);
+  hold on;
+  for i=1:length(nT)
+      plot(nC,simple_migrations(:,i));
+  end
+  xlim([0,max(nC)]);
+  ylim([0,1550]);
+  xlabel('cores');
+  ylabel('migrations');
+  title('Simple');
+  hold off;
+subplot(312);
+  hold on;
+  for i=1:length(nT)
+      plot(nC,load_aware_migrations(:,i));
+  end
+  hold off;
+  xlim([0,max(nC)]);
+  ylim([0,1550]);
+  xlabel('cores');
+  ylabel('migrations');
+  title('Load aware');
+subplot(313);
+  hold on;
+  for i=1:length(nT)
+      plot(nC,load_normalized_migrations(:,i));
+  end
+  hold off;
+  xlim([0,max(nC)]);
+  ylim([0,1550]);
+  xlabel('cores');
+  ylabel('migrations');
+  title('Load normalized');
+  
+  
+figure(6); clf;
+subplot(311);
+  hold on;
+  for i=1:length(nC)
+      plot(nT,simple_migrations(i,:));
+  end
+  xlim([0,max(nT)]);
+  ylim([0,1550]);
+  xlabel('threads');
+  ylabel('migrations');
+  title('Simple');
+  hold off;
+subplot(312);
+  hold on;
+  for i=1:length(nC)
+      plot(nT,load_aware_migrations(i,:));
+  end
+  hold off;
+  xlim([0,max(nT)]);
+  ylim([0,1550]);
+  xlabel('threads');
+  ylabel('migrations');
+  title('Load aware');
+subplot(313);
+  hold on;
+  for i=1:length(nC)
+      plot(nT,load_normalized_migrations(i,:));
+  end
+  hold off;
+  xlim([0,max(nT)]);
+  ylim([0,1550]);
+  xlabel('threads');
+  ylabel('migrations');
+  title('Load normalized');

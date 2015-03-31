@@ -29,11 +29,12 @@ def main():
 		description='Run multicore migration simulator.', \
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-	migrAlgos = ("simple load_aware load_normalized").split()
+	migrAlgos = ("simple load_aware load_normalized turn_over").split()
 
 	parser.add_argument('--migration',
 		help = 'Migration algorithm: ' + ' '.join(migrAlgos),
 		default = migrAlgos[0])
+
 	parser.add_argument('--outdir',
 		help = 'Destination folder for results and logs',
 		default = './results/')
@@ -68,6 +69,16 @@ def main():
 		help = 'Set point update period (Valid only with load_normalized!).',
 		default = 10)
 
+	parser.add_argument('--deltaTO',
+		type = int,
+		help = 'Set point update period (Valid only with turn_over!).',
+		default = 50)
+
+	parser.add_argument('--minL',
+		type = float,
+		help = 'Set point update period (Valid only with turn_over!).',
+		default = 0.1)
+
 	parser.add_argument('--padding',
 		type = float,
 		help = 'Padding for the adaptation of the set point (Valid only with load_normalized!).',
@@ -86,7 +97,7 @@ def main():
 	parser.add_argument('--save',
 		type = int,
 		help = 'Options to save data or not.',
-		default = 1)
+		default = 0)
 
 	parser.add_argument('--verb',
 		type = int,
@@ -141,7 +152,9 @@ def main():
 	utilizationSetPoint  = args.utilizationSetPoint * np.ones(numCores)  # utilization set point for each core
 	relocationThresholds = args.relocationThreshold * np.ones(numCores)  # Thresholds
 	DeltaSP = args.deltaSP
-	mm = mig.MigrationManager(numCores, relocationThresholds, minLoad=0.1, padding=args.padding, verb=False)
+	DeltaTO = args.deltaTO
+	minL = args.minL
+	mm = mig.MigrationManager(numCores, relocationThresholds, minLoad=minL, padding=args.padding, verb=False)
 
 	placement_matrix = np.zeros((numThreads, numCores));  # how the threads are partitioned among the different cores
 	
@@ -211,6 +224,13 @@ def main():
 					utilizationSetPoint = mm.normalize_load(Schedulers)
 				else:
 					mm.average_load(Schedulers,method=1)
+				placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
+			elif migration=='turn_over':
+				# If DeltaSP is elapsed, update the utilization set point
+				if np.mod(kk,DeltaTO)==0:
+					utilizationSetPoint = mm.turn_over_load(Schedulers,minLoad=minL)
+				#else:
+				#	mm.average_load(Schedulers,method=1)
 				placement_matrix = mm.migration_load_aware(Schedulers, placement_matrix,utilizationSetPoint,alphas)
 
 		# Saving the utilization setpoint

@@ -27,6 +27,7 @@ class MigrationManager:
 		self.numSamp = 0
 		self.keepUpdating = True
 		self.migrationPerThread = np.array([])
+		self.underloadedCore = 0
 
 		# Update overload index parameters
 		self.K       = 1e-6
@@ -69,6 +70,30 @@ class MigrationManager:
 		# resetting the average load
 		self.avgLoad = np.zeros(self.numCores)
 		self.numSamp = 0
+		return utilization_set_point
+
+	def turn_over_load(self, schedulerList,minLoad):
+		## Normalize the load with respect to the actual utilization
+		sum_utilization = np.sum([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
+		avg_utilization = 1.0/(self.numCores - 1) * sum_utilization
+		utilization_set_point = avg_utilization * np.ones(self.numCores)
+
+		utilization_set_point[self.underloadedCore] = minLoad
+
+		self.underloadedCore = np.mod(self.underloadedCore + 1,self.numCores)
+
+		# utilization = self.avgLoad
+		# avg_utilization = max(min(self.padding*np.mean(utilization),self.maxLoad),self.minLoad)
+		# utilization_set_point = avg_utilization * np.ones(self.numCores)
+
+		# if np.sum(self.migrationPerThread) > len(self.migrationPerThread):
+		# 	max_utilization = np.max([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
+		# 	max_utilization = min(max(max_utilization,self.minLoad),self.maxLoad)
+		# 	utilization_set_point = max_utilization * np.ones(self.numCores)
+
+		# # resetting the average load
+		# self.avgLoad = np.zeros(self.numCores)
+		# self.numSamp = 0
 		return utilization_set_point
 
 	def updatedOverloadIndex(self, schedulerList, utilization_set_point):
