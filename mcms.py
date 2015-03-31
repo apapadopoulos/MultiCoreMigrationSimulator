@@ -246,6 +246,7 @@ def main():
 			   args.padding,\
 			   args.relocationThreshold,\
 			   args.simTime)
+	mm.viewTotalMigrations()
 
 	if args.plot:
 		plt.figure(1)

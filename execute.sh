@@ -3,7 +3,7 @@
 rm -rf results
 mkdir -p results
 
-algs=( simple load_aware load_normalized )
+algs=( simple load_aware load_normalized turn_over )
 
 for algorithm in "${algs[@]}"
 do

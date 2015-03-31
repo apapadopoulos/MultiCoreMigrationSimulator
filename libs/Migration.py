@@ -28,6 +28,7 @@ class MigrationManager:
 		self.keepUpdating = True
 		self.migrationPerThread = np.array([])
 		self.underloadedCore = 0
+		self.turn_over = False
 
 		# Update overload index parameters
 		self.K       = 1e-6
@@ -74,6 +75,7 @@ class MigrationManager:
 
 	def turn_over_load(self, schedulerList,minLoad):
 		## Normalize the load with respect to the actual utilization
+		self.turn_over = True
 		sum_utilization = np.sum([schedulerList[i].getNominalUtilization() for i in xrange(0,self.numCores)])
 		avg_utilization = 1.0/(self.numCores - 1) * sum_utilization
 		utilization_set_point = avg_utilization * np.ones(self.numCores)
@@ -242,7 +244,7 @@ class MigrationManager:
 					idx_thread = ut.argMaxRand(possible_alphas)
 					migration_selected = index_threads[idx_thread]
 
-					if self.migrationPerThread[migration_selected] < self.numCores:
+					if self.migrationPerThread[migration_selected] < self.numCores or self.turn_over:
 						# migrating the process on the placement_matrix
 						placement_matrix = self.migrate(placement_matrix,\
 							                            migration_selected,\
